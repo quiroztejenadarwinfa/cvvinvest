@@ -185,6 +185,58 @@ export async function getSession() {
   }
 }
 
+// Get all users (for admin)
+export async function getAllUsersFromDB() {
+  try {
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .order("created_at", { ascending: false })
+
+    if (error) throw error
+
+    return { users: (data || []) as User[], error: null }
+  } catch (error: any) {
+    return { users: [], error: error.message }
+  }
+}
+
+// Approve/Activate user
+export async function approveUser(userId: string) {
+  try {
+    const { data, error } = await supabase
+      .from("users")
+      .update({ is_active: true })
+      .eq("id", userId)
+      .select()
+      .single()
+
+    if (error) throw error
+
+    return { user: data as User, error: null }
+  } catch (error: any) {
+    return { user: null, error: error.message }
+  }
+}
+
+// Deactivate user
+export async function deactivateUser(userId: string) {
+  try {
+    const { data, error } = await supabase
+      .from("users")
+      .update({ is_active: false })
+      .eq("id", userId)
+      .select()
+      .single()
+
+    if (error) throw error
+
+    return { user: data as User, error: null }
+  } catch (error: any) {
+    return { user: null, error: error.message }
+  }
+}
+
 // Listen to auth changes
 export function onAuthStateChanged(
   callback: (user: User | null) => void

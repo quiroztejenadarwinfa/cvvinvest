@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { getSessionUser, clearSession, ADMIN_EMAIL, type User, getAllUsers, setAllUsers } from "@/lib/auth"
+import { getAllUsersFromDB, approveUser, deactivateUser } from "@/lib/auth-supabase"
 import { createUserNotification, createAdminNotification } from "@/lib/notifications"
 import { getPlanFeatures, type PlanType } from "@/lib/plan-features"
 import { AdminSidebar } from "@/components/admin/sidebar"
@@ -47,12 +48,14 @@ export default function AdminUsuariosPage() {
   const [users, setUsers] = useState<User[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [filterPlan, setFilterPlan] = useState<string>("all")
+  const [showPendingOnly, setShowPendingOnly] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [editForm, setEditForm] = useState({ name: "", plan: "", balance: 0 })
   const [showPlanModal, setShowPlanModal] = useState(false)
   const [selectedUserForPlan, setSelectedUserForPlan] = useState<User | null>(null)
   const [newPlanValue, setNewPlanValue] = useState<string>("")
   const [planChangeMessage, setPlanChangeMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
+  const [approvingId, setApprovingId] = useState<string | null>(null)
   const router = useRouter()
   const { toast } = useToast()
 
@@ -71,9 +74,17 @@ export default function AdminUsuariosPage() {
     setLoading(false)
   }, [router])
 
-  const loadUsers = () => {
-    const allUsers = getAllUsers()
-    setUsers(allUsers)
+  const loadUsers = async () => {
+    // Intentar cargar de Supabase primero
+    const { users: dbUsers } = await getAllUsersFromDB()
+    
+    if (dbUsers && dbUsers.length > 0) {
+      setUsers(dbUsers)
+    } else {
+      // Fallback a localStorage si no hay usuarios en Supabase
+      const allUsers = getAllUsers()
+      setUsers(allUsers)
+    }
   }
 
   const handleLogout = () => {
@@ -81,12 +92,63 @@ export default function AdminUsuariosPage() {
     router.push("/")
   }
 
+  const handleApproveUser = async (userId: string) => {
+    setApprovingId(userId)
+    try {
+      const { user: approvedUser, error } = await approveUser(userId)
+      if (error) throw new Error(error)
+
+      // Actualizar lista local
+      const updatedUsers = users.map((u) =>
+        u.id === userId ? { ...u, is_active: true } : u
+      )
+      setUsers(updatedUsers)
+
+      toast({
+        title: "Usuario Aprobado",
+        description: `${approvedUser?.name} ha sido aprobado y puede acceder a la plataforma.`,
+      })
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      })
+    } finally {
+      setApprovingId(null)
+    }
+  }
+
+  const handleDeactivateUser = async (userId: string) => {
+    try {
+      const { error } = await deactivateUser(userId)
+      if (error) throw new Error(error)
+
+      const updatedUsers = users.map((u) =>
+        u.id === userId ? { ...u, is_active: false } : u
+      )
+      setUsers(updatedUsers)
+
+      toast({
+        title: "Usuario Desactivado",
+        description: "El usuario ha sido desactivado.",
+      })
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      })
+    }
+  }
+
   const filteredUsers = users.filter((user) => {
     const matchesSearch =
       user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesPlan = filterPlan === "all" || user.plan === filterPlan
-    return matchesSearch && matchesPlan && user.role === "user"
+    const isPending = showPendingOnly ? !user.is_active : true
+    return matchesSearch && matchesPlan && user.role === "user" && isPending
   })
 
   const openEditDialog = (user: User) => {
@@ -194,6 +256,8 @@ export default function AdminUsuariosPage() {
     const usersList = users.filter((u) => u.role === "user")
     return {
       total: usersList.length,
+      approved: usersList.filter((u) => u.is_active).length,
+      pending: usersList.filter((u) => !u.is_active).length,
       gratuito: usersList.filter((u) => u.plan === "gratuito").length,
       estandar: usersList.filter((u) => u.plan === "estandar").length,
       pro: usersList.filter((u) => u.plan === "pro").length,
@@ -237,11 +301,23 @@ export default function AdminUsuariosPage() {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
               <Card className="bg-card border-border">
                 <CardContent className="pt-4">
                   <p className="text-xs text-muted-foreground mb-1">Total</p>
                   <p className="text-2xl font-bold">{stats.total}</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-card border-green-500/30 cursor-pointer hover:bg-green-500/5" onClick={() => setShowPendingOnly(false)}>
+                <CardContent className="pt-4">
+                  <p className="text-xs text-muted-foreground mb-1">Aprobados</p>
+                  <p className="text-2xl font-bold text-green-500">{stats.approved}</p>
+                </CardContent>
+              </Card>
+              <Card className={`border-orange-500/30 cursor-pointer ${showPendingOnly ? 'bg-orange-500/10 border-2 border-orange-500' : 'bg-card'} hover:bg-orange-500/5`} onClick={() => setShowPendingOnly(true)}>
+                <CardContent className="pt-4">
+                  <p className="text-xs text-muted-foreground mb-1">Pendientes</p>
+                  <p className="text-2xl font-bold text-orange-500">{stats.pending}</p>
                 </CardContent>
               </Card>
               <Card className="bg-card border-slate-500/30">
@@ -345,6 +421,22 @@ export default function AdminUsuariosPage() {
                           </div>
 
                           <div className="flex items-center gap-2">
+                            {!user.is_active ? (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="default"
+                                  onClick={() => handleApproveUser(user.id)}
+                                  disabled={approvingId === user.id}
+                                  className="gap-2 bg-green-600 hover:bg-green-700"
+                                >
+                                  <CheckCircle2 className="h-4 w-4" />
+                                  {approvingId === user.id ? "Aprobando..." : "Aprobar"}
+                                </Button>
+                              </>
+                            ) : (
+                              <Badge className="bg-green-500/20 text-green-400">✓ Aprobado</Badge>
+                            )}
                             <Button
                               size="sm"
                               variant="outline"
