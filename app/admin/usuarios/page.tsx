@@ -391,7 +391,7 @@ export default function AdminUsuariosPage() {
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Buscar por nombre o email..."
+                      placeholder="Buscar por correo, nombre o ID..."
                       className="pl-10 bg-secondary border-border"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
