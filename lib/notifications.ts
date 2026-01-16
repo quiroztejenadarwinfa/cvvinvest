@@ -8,6 +8,7 @@ export type NotificationType =
   | 'investment_approved'  // Inversión aprobada
   | 'investment_rejected'   // Inversión rechazada
   | 'user_registered'   // Nuevo usuario registrado
+  | 'comprobante_transfer'  // Comprobante de transferencia
   | 'system'           // Notificación del sistema
 
 export interface Notification {

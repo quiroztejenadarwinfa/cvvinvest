@@ -1,7 +1,7 @@
 'use client'
 
 import { Suspense } from 'react'
-import TransferenciaContent from './transferencia-content.tsx'
+import TransferenciaContent from './transferencia-content'
 
 export default function TransferenciaPage() {
   return (
