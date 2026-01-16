@@ -314,22 +314,22 @@ export default function AdminRetirosPage() {
             <DialogDescription>
               {selectedWithdrawal && (
                 <div className="space-y-2 mt-4">
-                  <p>
+                  <div>
                     <span className="font-semibold">Usuario:</span> {selectedWithdrawal.userName}
-                  </p>
-                  <p>
+                  </div>
+                  <div>
                     <span className="font-semibold">Email:</span> {selectedWithdrawal.userEmail}
-                  </p>
-                  <p>
+                  </div>
+                  <div>
                     <span className="font-semibold">Monto:</span> ${selectedWithdrawal.amount.toFixed(2)}
-                  </p>
-                  <p>
+                  </div>
+                  <div>
                     <span className="font-semibold">Método:</span> {selectedWithdrawal.method}
-                  </p>
+                  </div>
                   {selectedWithdrawal.accountDetails && (
-                    <p>
+                    <div>
                       <span className="font-semibold">Cuenta:</span> {selectedWithdrawal.accountDetails}
-                    </p>
+                    </div>
                   )}
                 </div>
               )}

@@ -109,19 +109,19 @@ export async function registerWithSupabase(
 
     if (error) return { success: false, error: error.message, user: null }
 
-    // Crear registro en tabla users
-    if (data.user) {
-      const { error: insertError } = await supabase.from("users").insert({
-        id: data.user.id,
-        email: data.user.email,
-        name: name,
-        plan: "gratuito",
-        balance: 0,
-        is_active: true,
-      })
+    if (!data.user) return { success: false, error: "User creation failed", user: null }
 
-      if (insertError) return { success: false, error: insertError.message, user: null }
-    }
+    // Crear registro en tabla users
+    const { error: insertError } = await supabase.from("users").insert({
+      id: data.user.id,
+      email: data.user.email,
+      name: name,
+      plan: "gratuito",
+      balance: 0,
+      is_active: true,
+    })
+
+    if (insertError) return { success: false, error: insertError.message, user: null }
 
     const user: User = {
       id: data.user.id,
