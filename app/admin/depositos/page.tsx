@@ -178,6 +178,85 @@ export default function AdminDepositosPage() {
     }
   }
 
+  const handleApproveComprobante = (comprobanteId: string) => {
+    if (!selectedComprobante) return
+
+    const allComprobantes = JSON.parse(localStorage.getItem('cvvinvest_comprobantes') || '[]')
+    const comprobante = allComprobantes.find((c: any) => c.id === comprobanteId)
+    
+    if (comprobante) {
+      // Cambiar estado del comprobante a aprobado
+      comprobante.status = 'aprobado'
+      comprobante.updatedAt = new Date().toISOString()
+      localStorage.setItem('cvvinvest_comprobantes', JSON.stringify(allComprobantes))
+
+      // Crear o actualizar el depósito relacionado
+      const allDeposits = getAllDeposits()
+      let deposit = allDeposits.find((d: any) => d.comprobanteId === comprobanteId)
+      
+      if (!deposit) {
+        // Crear nuevo depósito si no existe
+        deposit = {
+          id: `dep_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          userId: comprobante.userId,
+          userEmail: comprobante.userEmail,
+          userName: comprobante.userName,
+          amount: comprobante.amount,
+          method: 'Transferencia Bancaria',
+          status: 'aprobado',
+          comprobanteId: comprobanteId,
+          createdAt: new Date().toISOString(),
+          notes: 'Depósito automático desde comprobante aprobado'
+        }
+        allDeposits.unshift(deposit)
+      } else {
+        // Actualizar estado a aprobado
+        deposit.status = 'aprobado'
+        deposit.notes = 'Comprobante revisado y aprobado'
+      }
+      
+      localStorage.setItem('cvvinvest_deposits', JSON.stringify(allDeposits))
+
+      // Actualizar balance del usuario
+      const allUsers = JSON.parse(localStorage.getItem('cvvinvest_users') || '[]')
+      const user = allUsers.find((u: any) => u.email === comprobante.userEmail)
+      if (user) {
+        user.balance = (parseFloat(user.balance) || 0) + comprobante.amount
+        localStorage.setItem('cvvinvest_users', JSON.stringify(allUsers))
+      }
+
+      toast({
+        title: "Éxito",
+        description: `Comprobante aprobado. Depósito de $${comprobante.amount.toFixed(2)} registrado.`,
+      })
+      
+      loadDeposits()
+      setSelectedComprobante(null)
+    }
+  }
+
+  const handleRejectComprobante = (comprobanteId: string) => {
+    if (!selectedComprobante) return
+
+    const allComprobantes = JSON.parse(localStorage.getItem('cvvinvest_comprobantes') || '[]')
+    const comprobante = allComprobantes.find((c: any) => c.id === comprobanteId)
+    
+    if (comprobante) {
+      // Cambiar estado del comprobante a rechazado
+      comprobante.status = 'rechazado'
+      comprobante.updatedAt = new Date().toISOString()
+      localStorage.setItem('cvvinvest_comprobantes', JSON.stringify(allComprobantes))
+
+      toast({
+        title: "Éxito",
+        description: "Comprobante rechazado.",
+      })
+      
+      loadDeposits()
+      setSelectedComprobante(null)
+    }
+  }
+
   const openApprovalDialog = (deposit: Deposit) => {
     setSelectedDeposit(deposit)
     setActionType("approve")
@@ -377,37 +456,48 @@ export default function AdminDepositosPage() {
                   <p className="text-muted-foreground text-center py-8">No hay comprobantes de transferencia</p>
                 ) : (
                   <div className="space-y-4">
-                    {comprobantes.map((comprobante) => (
-                      <div 
-                        key={comprobante.id}
-                        onClick={() => setSelectedComprobante(comprobante)}
-                        className="border-2 border-primary/30 rounded-lg p-4 hover:bg-primary/5 cursor-pointer transition-colors"
-                      >
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex-1">
-                            <p className="font-semibold">{comprobante.userName}</p>
-                            <p className="text-sm text-muted-foreground">{comprobante.userEmail}</p>
+                    {comprobantes.map((comprobante) => {
+                      const statusConfig = {
+                        'pendiente': { bg: 'border-yellow-300 bg-yellow-50', text: 'text-yellow-800', label: '⏳ Pendiente' },
+                        'aprobado': { bg: 'border-green-300 bg-green-50', text: 'text-green-800', label: '✓ Aprobado' },
+                        'rechazado': { bg: 'border-red-300 bg-red-50', text: 'text-red-800', label: '✗ Rechazado' }
+                      }
+                      const status = statusConfig[comprobante.status as keyof typeof statusConfig] || statusConfig.pendiente
+                      return (
+                        <div 
+                          key={comprobante.id}
+                          onClick={() => setSelectedComprobante(comprobante)}
+                          className={cn(
+                            "border-2 rounded-lg p-4 hover:shadow-md cursor-pointer transition-all",
+                            status.bg
+                          )}
+                        >
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex-1">
+                              <p className="font-semibold">{comprobante.userName}</p>
+                              <p className="text-sm text-muted-foreground">{comprobante.userEmail}</p>
+                            </div>
+                            <Badge className="bg-blue-600">
+                              ${comprobante.amount.toFixed(2)}
+                            </Badge>
                           </div>
-                          <Badge className="bg-blue-600">
-                            ${comprobante.amount.toFixed(2)}
-                          </Badge>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">
+                              {new Date(comprobante.createdAt).toLocaleDateString('es-ES', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </span>
+                            <Badge variant="outline" className={cn("border-0", status.text, status.bg)}>
+                              {status.label}
+                            </Badge>
+                          </div>
                         </div>
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">
-                            {new Date(comprobante.createdAt).toLocaleDateString('es-ES', {
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </span>
-                          <Badge variant="outline" className="bg-yellow-100 text-yellow-800">
-                            {comprobante.status === 'pendiente' ? 'Pendiente' : 'Revisado'}
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
               </CardContent>
@@ -478,11 +568,29 @@ export default function AdminDepositosPage() {
                 >
                   Cerrar
                 </Button>
-                <Button 
-                  className="flex-1 bg-green-600 hover:bg-green-700"
-                >
-                  Aprobar Depósito
-                </Button>
+                {selectedComprobante.status === 'pendiente' && (
+                  <>
+                    <Button 
+                      onClick={() => handleRejectComprobante(selectedComprobante.id)}
+                      variant="destructive"
+                      className="flex-1"
+                    >
+                      Rechazar
+                    </Button>
+                    <Button 
+                      onClick={() => handleApproveComprobante(selectedComprobante.id)}
+                      className="flex-1 bg-green-600 hover:bg-green-700"
+                    >
+                      Aprobar
+                    </Button>
+                  </>
+                )}
+                {selectedComprobante.status === 'aprobado' && (
+                  <Badge className="flex-1 bg-green-600 justify-center py-2">✓ Aprobado</Badge>
+                )}
+                {selectedComprobante.status === 'rechazado' && (
+                  <Badge variant="destructive" className="flex-1 justify-center py-2">✗ Rechazado</Badge>
+                )}
               </div>
             </CardContent>
           </Card>
