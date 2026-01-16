@@ -24,6 +24,8 @@ export async function signUpWithEmail(
   name: string
 ) {
   try {
+    console.log("📝 Starting signup for:", email)
+    
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -34,24 +36,41 @@ export async function signUpWithEmail(
       },
     })
 
-    if (error) throw error
+    if (error) {
+      console.error("❌ Auth signup error:", error)
+      throw error
+    }
+
+    console.log("✅ Auth user created:", data.user?.id)
 
     // Crear registro en tabla users
     if (data.user) {
-      const { error: insertError } = await supabase.from("users").insert({
-        id: data.user.id,
-        email: data.user.email,
-        name: name,
-        plan: "gratuito",
-        balance: 0,
-        is_active: true,
-      })
+      console.log("📊 Creating user record in database...")
+      const { data: insertData, error: insertError } = await supabase
+        .from("users")
+        .insert({
+          id: data.user.id,
+          email: data.user.email,
+          name: name,
+          plan: "gratuito",
+          balance: 0,
+          is_active: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .select()
 
-      if (insertError) throw insertError
+      if (insertError) {
+        console.error("❌ Error inserting user record:", insertError.message, insertError.details)
+        throw insertError
+      }
+
+      console.log("✅ User record created:", insertData)
     }
 
     return { user: data.user, error: null }
   } catch (error: any) {
+    console.error("❌ Signup error:", error.message)
     return { user: null, error: error.message }
   }
 }
@@ -188,22 +207,41 @@ export async function getSession() {
 // Get all users (for admin)
 export async function getAllUsersFromDB() {
   try {
+    console.log("📍 Attempting to load users from Supabase...")
+    
     const { data, error } = await supabase
       .from("users")
       .select("*")
       .order("created_at", { ascending: false })
 
+    console.log("Supabase response:", { data, error })
+
     if (error) {
-      console.error("Supabase error loading users:", error)
+      console.error("❌ Supabase error loading users:", error.message, error.details)
       throw error
     }
 
+    if (!data) {
+      console.warn("⚠️ Supabase returned null data")
+      return { users: [], error: "No data returned from Supabase" }
+    }
+
     const users = (data || []) as User[]
-    console.log(`✓ Loaded ${users.length} users from Supabase`)
+    console.log(`✅ Loaded ${users.length} users from Supabase:`, users)
+    
+    // Also save to localStorage for backup
+    if (typeof window !== "undefined" && users.length > 0) {
+      try {
+        localStorage.setItem("cvvinvest_users", JSON.stringify(users))
+        console.log("💾 Saved to localStorage backup")
+      } catch (e) {
+        console.warn("Could not save to localStorage:", e)
+      }
+    }
     
     return { users, error: null }
   } catch (error: any) {
-    console.error("Error in getAllUsersFromDB:", error.message)
+    console.error("❌ Error in getAllUsersFromDB:", error.message, error)
     
     // Fallback to localStorage for testing
     try {
@@ -219,6 +257,7 @@ export async function getAllUsersFromDB() {
       console.error("Fallback to localStorage also failed:", fallbackError)
     }
     
+    console.log("⚠️ Returning empty users array")
     return { users: [], error: error.message }
   }
 }

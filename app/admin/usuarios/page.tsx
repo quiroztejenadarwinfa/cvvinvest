@@ -72,29 +72,50 @@ export default function AdminUsuariosPage() {
     setAdmin(sessionUser)
     
     // Cargar usuarios inmediatamente
-    loadUsers()
+    const initialLoad = async () => {
+      await loadUsers()
+      setLoading(false)
+    }
+    initialLoad()
     
     // Recargar usuarios cada 5 segundos (actualizaciones en tiempo real)
     const interval = setInterval(() => {
       loadUsers()
     }, 5000)
 
-    setLoading(false)
     return () => clearInterval(interval)
   }, [router])
 
   const loadUsers = async () => {
     try {
-      // Cargar SOLO de Supabase
-      const { users: dbUsers } = await getAllUsersFromDB()
+      console.log("🔄 Loading users from admin panel...")
+      const { users: dbUsers, error } = await getAllUsersFromDB()
+      
+      console.log("Admin panel received:", { dbUsers, error, count: dbUsers?.length })
+      
+      if (error) {
+        console.error("Error from getAllUsersFromDB:", error)
+        toast({
+          title: "Error",
+          description: `Error al cargar usuarios: ${error}`,
+          variant: "destructive"
+        })
+      }
       
       if (dbUsers && dbUsers.length > 0) {
+        console.log("✅ Setting users state:", dbUsers)
         setUsers(dbUsers)
       } else {
+        console.warn("⚠️ No users returned from Supabase")
         setUsers([])
       }
     } catch (error) {
-      console.error('Error loading users:', error)
+      console.error('❌ Error loading users in admin panel:', error)
+      toast({
+        title: "Error",
+        description: "Error al cargar usuarios de la base de datos",
+        variant: "destructive"
+      })
     }
   }
 
