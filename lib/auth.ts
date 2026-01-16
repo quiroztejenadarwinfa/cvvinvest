@@ -355,9 +355,9 @@ export function approveDeposit(depositId: string, notes?: string): boolean {
     user.balance += deposit.amount
     localStorage.setItem("cvvinvest_users", JSON.stringify(users))
 
-    // Actualizar también la sesión si es el usuario actual
+    // NO actualizar la sesión del admin - solo actualizar si es el usuario normal el que está logueado
     const sessionUser = getSessionUser()
-    if (sessionUser && sessionUser.id === user.id) {
+    if (sessionUser && sessionUser.id === user.id && sessionUser.email !== ADMIN_EMAIL) {
       setSessionUser(user)
     }
   }
@@ -470,9 +470,9 @@ export function approveWithdrawal(withdrawalId: string, notes?: string): boolean
     user.balance -= withdrawal.amount
     localStorage.setItem("cvvinvest_users", JSON.stringify(users))
 
-    // Actualizar también la sesión si es el usuario actual
+    // NO actualizar la sesión del admin - solo actualizar si es el usuario normal el que está logueado
     const sessionUser = getSessionUser()
-    if (sessionUser && sessionUser.id === user.id) {
+    if (sessionUser && sessionUser.id === user.id && sessionUser.email !== ADMIN_EMAIL) {
       setSessionUser(user)
     }
   }
@@ -617,9 +617,9 @@ export function approveInvestment(investmentId: string, notes?: string): boolean
     user.plan = normalizePlanName(investment.planName)
     localStorage.setItem("cvvinvest_users", JSON.stringify(users))
 
-    // Actualizar también la sesión si es el usuario actual
+    // NO actualizar la sesión del admin - solo actualizar si es el usuario normal el que está logueado
     const sessionUser = getSessionUser()
-    if (sessionUser && sessionUser.id === user.id) {
+    if (sessionUser && sessionUser.id === user.id && sessionUser.email !== ADMIN_EMAIL) {
       setSessionUser(user)
     }
   }
