@@ -209,15 +209,22 @@ export async function getAllUsersFromDB() {
   try {
     console.log("📍 Attempting to load users from Supabase...")
     
+    // First check if user is authenticated
+    const { data: { user: authUser } } = await supabase.auth.getUser()
+    console.log("🔐 Current auth user:", authUser?.email || "No user logged in")
+    
     const { data, error } = await supabase
       .from("users")
       .select("*")
       .order("created_at", { ascending: false })
 
-    console.log("Supabase response:", { data, error })
+    console.log("📨 Supabase response:", { 
+      dataLength: data?.length || 0, 
+      error: error?.message || "No error"
+    })
 
     if (error) {
-      console.error("❌ Supabase error loading users:", error.message, error.details)
+      console.error("❌ Supabase error loading users:", error.message, error.details, error.hint)
       throw error
     }
 
@@ -227,7 +234,8 @@ export async function getAllUsersFromDB() {
     }
 
     const users = (data || []) as User[]
-    console.log(`✅ Loaded ${users.length} users from Supabase:`, users)
+    console.log(`✅ Loaded ${users.length} users from Supabase`)
+    console.log("👥 Users loaded:", users.map(u => ({ email: u.email, name: u.name, plan: u.plan })))
     
     // Also save to localStorage for backup
     if (typeof window !== "undefined" && users.length > 0) {
