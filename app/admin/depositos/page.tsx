@@ -58,9 +58,11 @@ export default function AdminDepositosPage() {
   const [admin, setAdmin] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [deposits, setDeposits] = useState<Deposit[]>([])
+  const [comprobantes, setComprobantes] = useState<any[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState<string>("all")
   const [selectedDeposit, setSelectedDeposit] = useState<Deposit | null>(null)
+  const [selectedComprobante, setSelectedComprobante] = useState<any | null>(null)
   const [actionNotes, setActionNotes] = useState("")
   const [isActionDialogOpen, setIsActionDialogOpen] = useState(false)
   const [actionType, setActionType] = useState<"approve" | "reject" | "cancel" | null>(null)
@@ -89,6 +91,10 @@ export default function AdminDepositosPage() {
   const loadDeposits = () => {
     const allDeposits = getAllDeposits()
     setDeposits(allDeposits.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()))
+    
+    // Load comprobantes from localStorage
+    const allComprobantes = JSON.parse(localStorage.getItem('cvvinvest_comprobantes') || '[]')
+    setComprobantes(allComprobantes.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()))
   }
 
   const handleLogout = () => {
@@ -357,11 +363,131 @@ export default function AdminDepositosPage() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Comprobantes Section */}
+            <Card className="mt-8">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <DollarSign className="h-5 w-5" />
+                  Comprobantes de Transferencia
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {comprobantes.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">No hay comprobantes de transferencia</p>
+                ) : (
+                  <div className="space-y-4">
+                    {comprobantes.map((comprobante) => (
+                      <div 
+                        key={comprobante.id}
+                        onClick={() => setSelectedComprobante(comprobante)}
+                        className="border-2 border-primary/30 rounded-lg p-4 hover:bg-primary/5 cursor-pointer transition-colors"
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1">
+                            <p className="font-semibold">{comprobante.userName}</p>
+                            <p className="text-sm text-muted-foreground">{comprobante.userEmail}</p>
+                          </div>
+                          <Badge className="bg-blue-600">
+                            ${comprobante.amount.toFixed(2)}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">
+                            {new Date(comprobante.createdAt).toLocaleDateString('es-ES', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </span>
+                          <Badge variant="outline" className="bg-yellow-100 text-yellow-800">
+                            {comprobante.status === 'pendiente' ? 'Pendiente' : 'Revisado'}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </main>
       </div>
 
-      {/* Action Dialog */}
+      {/* Comprobante Modal */}
+      {selectedComprobante && (
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={() => setSelectedComprobante(null)}
+        >
+          <Card 
+            className="w-full max-w-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <CardHeader className="flex items-center justify-between">
+              <CardTitle>Comprobante de Transferencia</CardTitle>
+              <button 
+                onClick={() => setSelectedComprobante(null)}
+                className="text-2xl text-muted-foreground hover:text-foreground"
+              >
+                ×
+              </button>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <p className="text-sm font-semibold text-muted-foreground">Usuario</p>
+                <p className="text-lg font-semibold">{selectedComprobante.userName}</p>
+                <p className="text-sm text-muted-foreground">{selectedComprobante.userEmail}</p>
+              </div>
+              
+              <div>
+                <p className="text-sm font-semibold text-muted-foreground">Monto</p>
+                <p className="text-2xl font-bold text-primary">${selectedComprobante.amount.toFixed(2)}</p>
+              </div>
+
+              <div>
+                <p className="text-sm font-semibold text-muted-foreground">Fecha</p>
+                <p className="text-sm">{new Date(selectedComprobante.createdAt).toLocaleDateString('es-ES', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  second: '2-digit'
+                })}</p>
+              </div>
+
+              <div>
+                <p className="text-sm font-semibold text-muted-foreground mb-2">Comprobante</p>
+                {selectedComprobante.image && (
+                  <img 
+                    src={selectedComprobante.image} 
+                    alt="Comprobante"
+                    className="w-full rounded-lg border-2 border-primary/30 max-h-96 object-cover"
+                  />
+                )}
+              </div>
+
+              <div className="flex gap-2 pt-4">
+                <Button 
+                  onClick={() => setSelectedComprobante(null)}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Cerrar
+                </Button>
+                <Button 
+                  className="flex-1 bg-green-600 hover:bg-green-700"
+                >
+                  Aprobar Depósito
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
       <Dialog open={isActionDialogOpen} onOpenChange={setIsActionDialogOpen}>
         <DialogContent>
           <DialogHeader>
