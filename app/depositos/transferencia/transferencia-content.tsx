@@ -121,12 +121,12 @@ export default function TransferenciaContent() {
           type: "comprobante_transfer",
           title: "Nuevo Comprobante de Transferencia",
           message: `${user.email} ha enviado comprobante de transferencia por $${amount.toFixed(2)}`,
-          data: {
+          details: {
             userId: user.id,
-            comprobanteId: comprobanteId,
             amount: amount,
             userEmail: user.email
-          }
+          },
+          read: false
         })
 
         setSuccessMessage(`✓ Comprobante enviado. Monto en proceso: $${amount.toFixed(2)}`)
