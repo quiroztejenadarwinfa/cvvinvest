@@ -255,44 +255,6 @@ export function getRemainingDays(investment: Investment): number {
   return daysRemaining
 }
 
-// Inicializar usuarios de prueba
-export function initializeSampleUsers(): void {
-  if (typeof window === "undefined") return
-  
-  const existingUsers = localStorage.getItem("cvvinvest_users")
-  if (existingUsers) return // No sobrescribir si ya hay usuarios
-  
-  const sampleUsers: User[] = [
-    {
-      id: "user-001",
-      email: "usuario@ejemplo.com",
-      name: "Usuario Prueba",
-      role: "user",
-      plan: "gratuito",
-      balance: 0,
-      createdAt: new Date(),
-    },
-    {
-      id: "user-002",
-      email: "test@test.com",
-      name: "Test User",
-      role: "user",
-      plan: "estandar",
-      balance: 5000,
-      createdAt: new Date(),
-    },
-  ]
-  
-  localStorage.setItem("cvvinvest_users", JSON.stringify(sampleUsers))
-  
-  // Guardar contraseñas de prueba
-  const passwords: Record<string, string> = {
-    "usuario@ejemplo.com": "Password123",
-    "test@test.com": "Test12345",
-  }
-  localStorage.setItem("cvvinvest_passwords", JSON.stringify(passwords))
-}
-
 // ========== FUNCIONES DE DEPÓSITOS ==========
 
 // Crear depósito
@@ -968,3 +930,4 @@ export function updateUserPassword(email: string, newPassword: string): void {
     setSessionUser(currentUser) // Refrescar sesión
   }
 }
+

@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Logo } from "@/components/logo"
 import { Eye, EyeOff, Mail, Lock, AlertCircle } from "lucide-react"
-import { isAdmin, setSessionUser, type User, initializeSampleUsers, loginWithSupabase } from "@/lib/auth"
+import { isAdmin, setSessionUser, type User, loginWithSupabase } from "@/lib/auth"
 import { useToast } from "@/hooks/use-toast"
 
 export default function LoginPage() {
@@ -23,11 +23,6 @@ export default function LoginPage() {
   const [twoFactorPin, setTwoFactorPin] = useState("")
   const router = useRouter()
   const { toast } = useToast()
-
-  // Inicializar usuarios de prueba al cargar la página
-  useEffect(() => {
-    initializeSampleUsers()
-  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
