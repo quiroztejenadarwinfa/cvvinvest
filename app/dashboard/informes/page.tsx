@@ -135,6 +135,69 @@ export default function InformesPage() {
     setLoading(false)
   }, [router])
 
+  // Auto-refresh cada 2 segundos para sincronizar con inversiones en tiempo real
+  useEffect(() => {
+    if (!user) return
+
+    const interval = setInterval(() => {
+      const deposits = getUserDeposits()
+      const withdrawals = getUserWithdrawals()
+      const investments = getUserInvestments()
+
+      // Actualizar depósitos
+      const depositsByMonth: Record<string, number> = {}
+      deposits.forEach(d => {
+        const month = new Date(d.createdAt).toLocaleDateString('es-ES', { month: 'short' })
+        depositsByMonth[month] = (depositsByMonth[month] || 0) + d.amount
+      })
+      setDepositsData(Object.entries(depositsByMonth).map(([month, amount]) => ({ month, amount })))
+
+      // Actualizar retiros
+      const withdrawalsByMonth: Record<string, number> = {}
+      withdrawals.forEach(w => {
+        const month = new Date(w.createdAt).toLocaleDateString('es-ES', { month: 'short' })
+        withdrawalsByMonth[month] = (withdrawalsByMonth[month] || 0) + w.amount
+      })
+      setWithdrawalsData(Object.entries(withdrawalsByMonth).map(([month, amount]) => ({ month, amount })))
+
+      // Actualizar inversiones
+      const investmentsByPlan: Record<string, number> = {}
+      investments.forEach(i => {
+        investmentsByPlan[i.planName] = (investmentsByPlan[i.planName] || 0) + i.amount
+      })
+      const portfolioData = Object.entries(investmentsByPlan).map(([name, value]) => ({ name, value }))
+      setPortfolioDistribution(portfolioData.length > 0 ? portfolioData : [{ name: 'Sin inversiones', value: 0 }])
+
+      // Actualizar datos de inversiones por mes
+      const investmentsByMonth: Record<string, number> = {}
+      investments.forEach(i => {
+        const month = new Date(i.createdAt).toLocaleDateString('es-ES', { month: 'short' })
+        investmentsByMonth[month] = (investmentsByMonth[month] || 0) + i.amount
+      })
+      const investmentChartData = Object.entries(investmentsByMonth).map(([month, amount]) => ({
+        month,
+        amount,
+        returns: Math.round(amount * 0.05),
+      }))
+      setInvestmentData(investmentChartData)
+
+      // Actualizar totales
+      const totalDeposited = deposits.reduce((sum, d) => sum + d.amount, 0)
+      const totalWithdrawn = withdrawals.reduce((sum, w) => sum + w.amount, 0)
+      const totalInvested = investments.filter(i => i.status === 'aprobado').reduce((sum, i) => sum + i.amount, 0)
+      const averageInvestment = investments.length > 0 ? totalInvested / investments.length : 0
+
+      setTotalStats({
+        totalDeposited,
+        totalWithdrawn,
+        totalInvested,
+        averageInvestment,
+      })
+    }, 2000)
+
+    return () => clearInterval(interval)
+  }, [user])
+
   const handleLogout = () => {
     localStorage.removeItem("cvvinvest_user")
     router.push("/")

@@ -3,7 +3,7 @@
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
-import { Check, Star, Zap, Crown, Diamond, X } from "lucide-react"
+import { Check, Star, Zap, Crown, Diamond, X, AlertCircle } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
@@ -16,7 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { DollarSign, Wallet } from "lucide-react"
+import { DollarSign, Wallet, Building2 } from "lucide-react"
 
 const plans = [
   {
@@ -35,12 +35,11 @@ const plans = [
       "Acceso completo al panel de inversiones",
       "Depósitos sin límite de monto",
       "Visualización de mercados en tiempo real",
-      "Retiro sin comisiones (10 días hábiles)",
       "Centro de Ayuda 24/7",
       "Explorar todos los planes de pago",
       "Cambiar a plan premium sin penalización",
     ],
-    notIncluded: ["Soporte prioritario", "Asesor personal", "PayPal", "Retiro acelerado"],
+    notIncluded: ["Soporte prioritario", "Asesor personal", "PayPal", "Retiro de fondos", "Retiro acelerado"],
     popular: false,
     description: "Perfecto para comenzar sin riesgo con cualquier monto",
   },
@@ -170,15 +169,20 @@ export default function PlanesPage() {
   const [user, setUser] = useState<any>(null)
   const [mounted, setMounted] = useState(false)
   const [showInvestmentModal, setShowInvestmentModal] = useState(false)
+  const [showPlanChangeModal, setShowPlanChangeModal] = useState(false)
+  const [planChangeChoice, setPlanChangeChoice] = useState<"upgrade" | "replace" | null>(null)
   const [selectedPlan, setSelectedPlan] = useState<any>(null)
   const [investmentAmount, setInvestmentAmount] = useState("")
   const [investmentMessage, setInvestmentMessage] = useState("")
   const [showWithdrawalModal, setShowWithdrawalModal] = useState(false)
-  const [withdrawalMethod, setWithdrawalMethod] = useState<"paypal" | "binance">("paypal")
+  const [withdrawalMethod, setWithdrawalMethod] = useState<"paypal" | "binance" | "banco">("paypal")
   const [paypalEmail, setPaypalEmail] = useState("")
   const [paypalEmailConfirm, setPaypalEmailConfirm] = useState("")
   const [binanceUserId, setBinanceUserId] = useState("")
   const [binancePayId, setBinancePayId] = useState("")
+  const [bankName, setBankName] = useState("")
+  const [bankAccountNumber, setBankAccountNumber] = useState("")
+  const [bankAccountHolder, setBankAccountHolder] = useState("")
   const [withdrawalAmount, setWithdrawalAmount] = useState("")
   const [withdrawalMessage, setWithdrawalMessage] = useState("")
 
@@ -188,24 +192,58 @@ export default function PlanesPage() {
     setUser(currentUser)
   }, [])
 
+  useEffect(() => {
+    // Sincronizar el método de retiro según el plan del usuario
+    if (showWithdrawalModal && user) {
+      if (["pro", "vip", "elite"].includes((user.plan || "gratuito").toLowerCase())) {
+        setWithdrawalMethod("paypal")
+      } else {
+        setWithdrawalMethod("binance")
+      }
+    }
+  }, [showWithdrawalModal, user])
+
   const handleSelectPlan = (plan: any) => {
     if (!user) {
       router.push('/registro')
       return
     }
 
+    // Verificar si el usuario está intentando cambiar a un plan superior
+    const planHierarchy = { gratuito: 0, estandar: 1, pro: 2, vip: 3, elite: 4 }
+    const currentPlanLevel = planHierarchy[user.plan.toLowerCase() as keyof typeof planHierarchy] || 0
+    const newPlanLevel = planHierarchy[plan.name.toLowerCase() as keyof typeof planHierarchy] || 0
+
+    // Si intenta cambiar a un plan superior
+    if (newPlanLevel > currentPlanLevel && user.plan !== "gratuito") {
+      const planChangedAt = user.planChangedAt ? new Date(user.planChangedAt) : new Date()
+      const daysSincePlanChange = Math.floor((Date.now() - planChangedAt.getTime()) / (1000 * 60 * 60 * 24))
+      
+      // Si no han pasado 3 días
+      if (daysSincePlanChange < 3) {
+        // Mostrar modal de opciones para cambiar plan
+        setSelectedPlan({
+          ...plan,
+          isDeposit: false,
+          planChangeOption: true,
+          daysSincePlanChange,
+          daysRemaining: 3 - daysSincePlanChange
+        })
+        setShowPlanChangeModal(true)
+        return
+      }
+    }
+
+    // Comportamiento normal
     if (plan.name === "GRATUITO") {
       if (user.plan === "gratuito") {
-        // El usuario ya tiene Plan Gratuito, redirigir a panel de depósitos
         router.push('/depositos')
       } else {
-        // Activar plan gratuito
         setSelectedPlan({ ...plan, isDeposit: false })
         setInvestmentAmount("")
         setShowInvestmentModal(true)
       }
     } else {
-      // Mostrar modal para planes de pago
       setSelectedPlan({ ...plan, isDeposit: false })
       setInvestmentAmount("")
       setShowInvestmentModal(true)
@@ -339,7 +377,7 @@ export default function PlanesPage() {
       // Validar formato de correo
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
       if (!emailRegex.test(paypalEmail)) {
-        setWithdrawalMessage("Por favor ingresa un correo válido (ej: tu@email.com)")
+        setWithdrawalMessage("Por favor ingresa un correo válido")
         setTimeout(() => setWithdrawalMessage(""), 5000)
         return
       }
@@ -347,6 +385,13 @@ export default function PlanesPage() {
       // Validar campos de Binance
       if (!binanceUserId || !binancePayId) {
         setWithdrawalMessage("Por favor ingresa el ID de usuario y Binance Pay ID")
+        setTimeout(() => setWithdrawalMessage(""), 5000)
+        return
+      }
+    } else if (withdrawalMethod === "banco") {
+      // Validar campos de banco
+      if (!bankName || !bankAccountNumber || !bankAccountHolder) {
+        setWithdrawalMessage("Por favor ingresa todos los datos bancarios (banco, cuenta y titular)")
         setTimeout(() => setWithdrawalMessage(""), 5000)
         return
       }
@@ -375,6 +420,9 @@ export default function PlanesPage() {
       paypalEmail: withdrawalMethod === "paypal" ? paypalEmail : null,
       binanceUserId: withdrawalMethod === "binance" ? binanceUserId : null,
       binancePayId: withdrawalMethod === "binance" ? binancePayId : null,
+      bankName: withdrawalMethod === "banco" ? bankName : null,
+      bankAccountNumber: withdrawalMethod === "banco" ? bankAccountNumber : null,
+      bankAccountHolder: withdrawalMethod === "banco" ? bankAccountHolder : null,
       plan: user.plan || "gratuito",
       status: 'pending',
       date: new Date().toISOString(),
@@ -386,28 +434,32 @@ export default function PlanesPage() {
     localStorage.setItem('withdrawals', JSON.stringify(withdrawals))
 
     // Crear notificación para admin
+    const methodLabel = withdrawalMethod === "paypal" ? "PayPal" : withdrawalMethod === "binance" ? "Binance" : "Banco"
     createAdminNotification({
       type: 'withdrawal',
       title: 'Nueva Solicitud de Retiro',
-      message: `${user.name} solicitó un retiro de $${amount.toFixed(2)} por ${withdrawalMethod === "paypal" ? "PayPal" : "Binance Pay"}`,
+      message: `${user.name} solicitó un retiro de $${amount.toFixed(2)} por ${methodLabel}`,
       details: {
         userId: user.id,
         userName: user.name,
         userEmail: user.email,
         amount,
         plan: user.plan || "gratuito",
-        status: `${withdrawalMethod} - ${withdrawalMethod === "paypal" ? paypalEmail : binancePayId}`,
+        status: `${withdrawalMethod} - ${withdrawalMethod === "paypal" ? paypalEmail : withdrawalMethod === "binance" ? binancePayId : bankAccountNumber}`,
       },
       read: false,
     })
 
-    setWithdrawalMessage(`✓ Solicitud de retiro de $${amount.toFixed(2)} creada exitosamente por ${withdrawalMethod === "paypal" ? "PayPal" : "Binance Pay"}.`)
+    setWithdrawalMessage(`✓ Solicitud de retiro de $${amount.toFixed(2)} creada exitosamente por ${methodLabel}.`)
     setShowWithdrawalModal(false)
-    setWithdrawalMethod("paypal")
+    setWithdrawalMethod("binance")
     setPaypalEmail("")
     setPaypalEmailConfirm("")
     setBinanceUserId("")
     setBinancePayId("")
+    setBankName("")
+    setBankAccountNumber("")
+    setBankAccountHolder("")
     setWithdrawalAmount("")
     setTimeout(() => setWithdrawalMessage(""), 5000)
   }
@@ -537,7 +589,7 @@ export default function PlanesPage() {
                     <td className="py-4 px-4 font-semibold">Tiempo de Retiro</td>
                     {plans.map((plan) => (
                       <td key={plan.name} className="text-center py-4 px-4">
-                        {plan.name === "GRATUITO" && "10 días hábiles"}
+                        {plan.name === "GRATUITO" && "No aplica"}
                         {plan.name === "ESTANDAR" && "5 días hábiles"}
                         {plan.name === "PRO" && "3 días hábiles"}
                         {plan.name === "VIP" && "48 horas"}
@@ -806,6 +858,132 @@ export default function PlanesPage() {
       </main>
 
       {/* Investment Modal */}
+      {/* Plan Change Modal - When user wants to upgrade within 3 days */}
+      <Dialog open={showPlanChangeModal} onOpenChange={setShowPlanChangeModal}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-amber-600" />
+              Cambiar Plan
+            </DialogTitle>
+            <DialogDescription>
+              Tienes dos opciones para cambiar de plan en los primeros 3 días:
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            {/* Current Plan Info */}
+            <div className="bg-gradient-to-br from-slate-100 to-slate-50 dark:from-slate-900 dark:to-slate-800 p-4 rounded-lg border">
+              <p className="text-sm font-semibold text-slate-600 dark:text-slate-300 mb-1">Plan Actual</p>
+              <p className="text-lg font-bold text-slate-900 dark:text-slate-50 capitalize">{user?.plan}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Cambio de plan hace {selectedPlan?.daysSincePlanChange} día{selectedPlan?.daysSincePlanChange !== 1 ? 's' : ''}
+              </p>
+            </div>
+
+            {/* Option 1: Upgrade with Remaining Payment */}
+            <div 
+              onClick={() => setPlanChangeChoice("upgrade")}
+              className={cn(
+                "p-4 rounded-lg border-2 cursor-pointer transition-all",
+                planChangeChoice === "upgrade" 
+                  ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30" 
+                  : "border-slate-200 dark:border-slate-700 hover:border-blue-400"
+              )}
+            >
+              <div className="flex items-start gap-3">
+                <div className={cn(
+                  "h-5 w-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-1",
+                  planChangeChoice === "upgrade" ? "border-blue-500 bg-blue-500" : "border-slate-300"
+                )}>
+                  {planChangeChoice === "upgrade" && <div className="h-2 w-2 bg-white rounded-full" />}
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-slate-900 dark:text-slate-50">Cambiar con Pago Restante</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                    Paga solo la diferencia por los {selectedPlan?.daysRemaining} día{selectedPlan?.daysRemaining !== 1 ? 's' : ''} restantes. Tus fondos existentes se transfieren al nuevo plan.
+                  </p>
+                  <div className="mt-2 text-xs font-mono bg-slate-100 dark:bg-slate-900 px-2 py-1 rounded inline-block">
+                    💡 Más económico
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Option 2: Replace Plan */}
+            <div 
+              onClick={() => setPlanChangeChoice("replace")}
+              className={cn(
+                "p-4 rounded-lg border-2 cursor-pointer transition-all",
+                planChangeChoice === "replace" 
+                  ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30" 
+                  : "border-slate-200 dark:border-slate-700 hover:border-emerald-400"
+              )}
+            >
+              <div className="flex items-start gap-3">
+                <div className={cn(
+                  "h-5 w-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-1",
+                  planChangeChoice === "replace" ? "border-emerald-500 bg-emerald-500" : "border-slate-300"
+                )}>
+                  {planChangeChoice === "replace" && <div className="h-2 w-2 bg-white rounded-full" />}
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-slate-900 dark:text-slate-50">Solo Adquirir Nuevo Plan</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                    Adquiere el plan {selectedPlan?.name} sin considerar el plan anterior. Comienza con una nueva inversión desde cero.
+                  </p>
+                  <div className="mt-2 text-xs font-mono bg-slate-100 dark:bg-slate-900 px-2 py-1 rounded inline-block">
+                    🔄 Nuevo ciclo
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* New Plan Info */}
+            <div className="bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-950 dark:to-blue-900 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+              <p className="text-sm font-semibold text-blue-600 dark:text-blue-300 mb-1">Plan Nuevo</p>
+              <p className="text-lg font-bold text-blue-900 dark:text-blue-50">{selectedPlan?.name}</p>
+              <p className="text-xs text-blue-700 dark:text-blue-200 mt-1">
+                Rango de inversión: ${selectedPlan?.minAmount} - ${selectedPlan?.maxAmount}
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowPlanChangeModal(false)
+              setPlanChangeChoice(null)
+            }}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={() => {
+                if (!planChangeChoice) return
+                // Actualizar user con el cambio de plan
+                const updatedUser = {
+                  ...user,
+                  plan: selectedPlan.name.toLowerCase(),
+                  planChangedAt: new Date(),
+                  previousPlan: user.plan
+                }
+                localStorage.setItem('user', JSON.stringify(updatedUser))
+                setUser(updatedUser)
+                
+                setShowPlanChangeModal(false)
+                setPlanChangeChoice(null)
+                
+                // Mostrar el modal de inversión para confirmar el monto
+                setShowInvestmentModal(true)
+              }}
+              className="bg-primary"
+              disabled={!planChangeChoice}
+            >
+              Continuar con {planChangeChoice === "upgrade" ? "Pago Restante" : "Nuevo Plan"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Investment Modal */}
       <Dialog open={showInvestmentModal} onOpenChange={setShowInvestmentModal}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -866,7 +1044,7 @@ export default function PlanesPage() {
             <Button onClick={handleConfirmInvestment} className="bg-primary">
               {selectedPlan?.isDeposit ? "Confirmar Depósito" : "Confirmar Inversión"}
             </Button>
-            {user && (
+            {user && (user.plan || "gratuito").toLowerCase() === (selectedPlan?.name || "").toLowerCase() && (
               <Button 
                 variant="ghost" 
                 onClick={() => {
@@ -915,15 +1093,21 @@ export default function PlanesPage() {
               </p>
             </div>
 
-            <Tabs defaultValue="paypal" onValueChange={(value) => setWithdrawalMethod(value as "paypal" | "binance")}>
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="paypal">
-                  <DollarSign className="h-4 w-4 mr-2" />
-                  PayPal
-                </TabsTrigger>
+            <Tabs value={withdrawalMethod} onValueChange={(value) => setWithdrawalMethod(value as "paypal" | "binance" | "banco")}>
+              <TabsList className={`grid w-full ${["pro", "vip", "elite"].includes((user?.plan || "gratuito").toLowerCase()) ? "grid-cols-3" : "grid-cols-2"}`}>
+                {["pro", "vip", "elite"].includes((user?.plan || "gratuito").toLowerCase()) && (
+                  <TabsTrigger value="paypal">
+                    <DollarSign className="h-4 w-4 mr-2" />
+                    PayPal
+                  </TabsTrigger>
+                )}
                 <TabsTrigger value="binance">
                   <Wallet className="h-4 w-4 mr-2" />
-                  Binance Pay
+                  Binance
+                </TabsTrigger>
+                <TabsTrigger value="banco">
+                  <Building2 className="h-4 w-4 mr-2" />
+                  Banco
                 </TabsTrigger>
               </TabsList>
 
@@ -1010,7 +1194,7 @@ export default function PlanesPage() {
                     onChange={(e) => setBinanceUserId(e.target.value)}
                     className="border-2"
                   />
-                  <p className="text-xs text-muted-foreground">Encuéntralo en: Configuración → Información de Cuenta → ID de Usuario</p>
+                  <p className="text-xs text-muted-foreground">Encuéntralo en: Configuracion - Informacion de Cuenta - ID de Usuario</p>
                 </div>
 
                 <div className="grid gap-2">
@@ -1026,6 +1210,63 @@ export default function PlanesPage() {
                     className="border-2"
                   />
                   <p className="text-xs text-muted-foreground">El identificador único de tu billetera Binance Pay</p>
+                </div>
+              </TabsContent>
+
+              {/* Banco Tab */}
+              <TabsContent value="banco" className="space-y-4 mt-4">
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                  <p className="text-sm font-semibold text-purple-900 mb-2">
+                    Disponibilidad de Retiro por Banco
+                  </p>
+                  <p className="text-sm text-purple-800">
+                    Retiro por banco esta disponible para todos los planes
+                  </p>
+                  {user && (
+                    <p className="text-sm text-green-700 font-semibold mt-2">Tu plan tiene acceso a retiros bancarios</p>
+                  )}
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="bank-name" className="font-semibold">
+                    Banco
+                  </Label>
+                  <Input
+                    id="bank-name"
+                    type="text"
+                    placeholder="Nombre del banco"
+                    value={bankName}
+                    onChange={(e) => setBankName(e.target.value)}
+                    className="border-2"
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="bank-account-number" className="font-semibold">
+                    Numero de Cuenta
+                  </Label>
+                  <Input
+                    id="bank-account-number"
+                    type="text"
+                    placeholder="1234567890"
+                    value={bankAccountNumber}
+                    onChange={(e) => setBankAccountNumber(e.target.value)}
+                    className="border-2"
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="bank-account-holder" className="font-semibold">
+                    Titular de la Cuenta
+                  </Label>
+                  <Input
+                    id="bank-account-holder"
+                    type="text"
+                    placeholder="Tu nombre completo"
+                    value={bankAccountHolder}
+                    onChange={(e) => setBankAccountHolder(e.target.value)}
+                    className="border-2"
+                  />
                 </div>
               </TabsContent>
             </Tabs>
@@ -1060,17 +1301,9 @@ export default function PlanesPage() {
               onClick={handleWithdrawalRequest} 
               className="bg-primary hover:bg-primary/90"
             >
-              {withdrawalMethod === "paypal" ? (
-                <>
-                  <DollarSign className="h-4 w-4 mr-2" />
-                  Retirar por PayPal
-                </>
-              ) : (
-                <>
-                  <Wallet className="h-4 w-4 mr-2" />
-                  Retirar por Binance Pay
-                </>
-              )}
+              {withdrawalMethod === "paypal" && "Retirar por PayPal"}
+              {withdrawalMethod === "binance" && "Retirar por Binance"}
+              {withdrawalMethod === "banco" && "Retirar por Banco"}
             </Button>
           </DialogFooter>
         </DialogContent>

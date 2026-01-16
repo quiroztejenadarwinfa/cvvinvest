@@ -58,23 +58,15 @@ export function getUserCurrentSession(userId: string): ChatSession | null {
 }
 
 /**
- * Crear o abrir una nueva sesión de chat
+ * Crear una NUEVA sesión de chat (siempre crea uno nuevo, sin verificar existentes)
  */
-export function createOrGetChatSession(
+export function createNewChatSession(
   userId: string,
   userName: string,
   userEmail: string,
   quickMessageType?: QuickMessageType
 ): ChatSession {
-  // Verificar si ya existe una sesión
-  const allSessions = getAllChatSessions()
-  const existingSession = allSessions.find(s => s.userId === userId)
-
-  if (existingSession) {
-    return existingSession
-  }
-
-  // Crear nueva sesión
+  // Crear nueva sesión sin verificar existentes
   const newSession: ChatSession = {
     id: `chat_${userId}_${Date.now()}`,
     userId,
@@ -93,10 +85,31 @@ export function createOrGetChatSession(
   sessions.push(newSession)
   localStorage.setItem(CHAT_SESSIONS_KEY, JSON.stringify(sessions))
 
-  // Guardar referencia en el usuario
+  // Guardar como sesión actual del usuario
   localStorage.setItem(`${USER_CURRENT_SESSION_KEY}_${userId}`, JSON.stringify(newSession))
 
   return newSession
+}
+
+/**
+ * Obtener o crear una sesión de chat (mantiene la anterior si existe y está abierta)
+ */
+export function createOrGetChatSession(
+  userId: string,
+  userName: string,
+  userEmail: string,
+  quickMessageType?: QuickMessageType
+): ChatSession {
+  // Verificar si ya existe una sesión activa (no archivada)
+  const allSessions = getAllChatSessions()
+  const existingSession = allSessions.find(s => s.userId === userId && !s.archived && s.status === "open")
+
+  if (existingSession) {
+    return existingSession
+  }
+
+  // Si no existe, crear una nueva
+  return createNewChatSession(userId, userName, userEmail, quickMessageType)
 }
 
 /**
@@ -241,4 +254,109 @@ export function getActiveChatSessions(): ChatSession[] {
  */
 export function getArchivedChatSessions(): ChatSession[] {
   return getAllChatSessions().filter((s) => s.archived)
+}
+/**
+ * Validar y limpiar sesión de chat si el usuario cambió
+ * Previene que datos de otra cuenta aparezcan en el chatbot
+ */
+export function validateAndCleanChatSession(currentUserId: string): void {
+  try {
+    const stored = localStorage.getItem(USER_CURRENT_SESSION_KEY)
+    if (stored) {
+      const lastSessionUserId = JSON.parse(stored)
+      
+      // Si el ID del usuario cambió, limpiar todas las sesiones de chat
+      if (lastSessionUserId !== currentUserId) {
+        localStorage.removeItem(CHAT_SESSIONS_KEY)
+      }
+    }
+    
+    // Guardar el ID actual del usuario
+    localStorage.setItem(USER_CURRENT_SESSION_KEY, JSON.stringify(currentUserId))
+  } catch (error) {
+    console.error("Error validating chat session:", error)
+    // Si hay error, limpiar por seguridad
+    localStorage.removeItem(CHAT_SESSIONS_KEY)
+    localStorage.removeItem(USER_CURRENT_SESSION_KEY)
+  }
+}
+
+/**
+ * Limpiar sesión de chat completamente
+ */
+/**
+ * Limpiar sesión de chat completamente
+ */
+export function clearChatSession(): void {
+  try {
+    localStorage.removeItem(CHAT_SESSIONS_KEY)
+    localStorage.removeItem(USER_CURRENT_SESSION_KEY)
+  } catch (error) {
+    console.error("Error clearing chat session:", error)
+  }
+}
+
+/**
+ * Finalizar un chat (resolver o cancelar) - lo archiva y crea espacio para nuevo chat
+ */
+export function finalizeChatSession(sessionId: string, finalStatus: "resolved" | "cancelled"): void {
+  try {
+    const sessions = getAllChatSessions()
+    const sessionIndex = sessions.findIndex(s => s.id === sessionId)
+    
+    if (sessionIndex !== -1) {
+      sessions[sessionIndex].status = finalStatus === "resolved" ? "resolved" : "cancelled"
+      sessions[sessionIndex].archived = true
+      sessions[sessionIndex].updatedAt = new Date().toISOString()
+      localStorage.setItem(CHAT_SESSIONS_KEY, JSON.stringify(sessions))
+    }
+  } catch (error) {
+    console.error("Error finalizing chat session:", error)
+  }
+}
+
+/**
+ * Obtener todos los chats finalizados de un usuario
+ */
+export function getUserFinalizedChats(userId: string): ChatSession[] {
+  try {
+    return getAllChatSessions().filter(s => 
+      s.userId === userId && s.archived && (s.status === "resolved" || s.status === "cancelled")
+    )
+  } catch (error) {
+    console.error("Error getting finalized chats:", error)
+    return []
+  }
+}
+
+/**
+ * Obtener todos los chats activos de un usuario
+ */
+export function getUserActiveChats(userId: string): ChatSession[] {
+  try {
+    return getAllChatSessions().filter(s => 
+      s.userId === userId && !s.archived && s.status === "open"
+    )
+  } catch (error) {
+    console.error("Error getting active chats:", error)
+    return []
+  }
+}
+
+/**
+ * Cambiar el estado de un chat a "pending" (en espera de respuesta del admin)
+ */
+export function setPendingChat(sessionId: string): void {
+  try {
+    const sessions = getAllChatSessions()
+    const sessionIndex = sessions.findIndex(s => s.id === sessionId)
+    
+    if (sessionIndex !== -1) {
+      sessions[sessionIndex].status = "pending"
+      sessions[sessionIndex].updatedAt = new Date().toISOString()
+      localStorage.setItem(CHAT_SESSIONS_KEY, JSON.stringify(sessions))
+    }
+  } catch (error) {
+    console.error("Error setting chat to pending:", error)
+  }
 }

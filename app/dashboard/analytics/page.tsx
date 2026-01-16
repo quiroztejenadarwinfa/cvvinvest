@@ -89,6 +89,46 @@ export default function AnalyticsPage() {
     setLoading(false)
   }, [router])
 
+  // Auto-refresh cada 2 segundos para sincronizar con inversiones en tiempo real
+  useEffect(() => {
+    if (!user) return
+
+    const interval = setInterval(() => {
+      const deposits = getUserDeposits()
+      const withdrawals = getUserWithdrawals()
+      const investments = getUserInvestments()
+
+      // Actualizar totales
+      const depositTotal = deposits.reduce((sum, d) => sum + d.amount, 0)
+      const withdrawalTotal = withdrawals.reduce((sum, w) => sum + w.amount, 0)
+      const investmentTotal = investments.reduce((sum, i) => sum + i.amount, 0)
+      const activeCount = investments.filter(i => i.status === 'aprobado').length
+
+      setTotalDeposits(depositTotal)
+      setTotalWithdrawals(withdrawalTotal)
+      setTotalInvested(investmentTotal)
+      setActiveInvestments(activeCount)
+
+      // Actualizar volatilidad desde inversiones
+      const volatilityChart = generateVolatilityData(deposits)
+      setVolatilityData(volatilityChart)
+
+      // Actualizar correlación
+      const correlation = generateCorrelationData(deposits, investments)
+      setCorrelationData(correlation)
+
+      // Actualizar riesgos
+      const riskMetrics = calculateRiskMetrics(deposits, withdrawals, investments)
+      setRiskAnalysis(riskMetrics)
+
+      // Actualizar indicadores técnicos
+      const indicators = generateTechnicalIndicators(deposits, investments)
+      setTechnicalIndicators(indicators)
+    }, 2000)
+
+    return () => clearInterval(interval)
+  }, [user])
+
   // Función para generar datos de volatilidad
   const generateVolatilityData = (deposits: any[]) => {
     // Agrupar depósitos por fecha y calcular volatilidad

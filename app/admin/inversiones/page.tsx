@@ -70,6 +70,7 @@ export default function AdminInvestmentPage() {
   const [selectedPlanForChange, setSelectedPlanForChange] = useState<PlanType>('')
   const [suggestedPlans, setSuggestedPlans] = useState<PlanType[]>([])
   const [showFilters, setShowFilters] = useState(false)
+  const [adminEarningsMultiplier, setAdminEarningsMultiplier] = useState(0.05)
 
   useEffect(() => {
     const currentUser = getSessionUser()
@@ -376,6 +377,15 @@ export default function AdminInvestmentPage() {
     .reduce((sum, inv) => sum + inv.amount, 0)
   const approvedTotal = totalAmount
 
+  // Calcular ganancias
+  const totalEarningsGenerated = investments
+    .filter((inv) => inv.status === 'aprobado')
+    .reduce((sum, inv) => sum + (inv.amount * adminEarningsMultiplier), 0)
+  
+  const totalLosses = investments
+    .filter((inv) => inv.status === 'rechazado')
+    .reduce((sum, inv) => sum + inv.amount, 0)
+
   if (!user) {
     return <div className="p-8 text-center">Cargando...</div>
   }
@@ -467,6 +477,71 @@ export default function AdminInvestmentPage() {
             </div>
           </Card>
         </div>
+
+        {/* Earnings Statistics */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          {/* Total Ganancia Generada */}
+          <Card className="p-6 bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950 dark:to-emerald-900 border-emerald-200 dark:border-emerald-800">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm font-medium text-emerald-600 dark:text-emerald-300">Ganancia Generada</p>
+                <p className="text-3xl font-bold text-emerald-900 dark:text-emerald-50 mt-2">${totalEarningsGenerated.toFixed(2)}</p>
+                <p className="text-xs text-emerald-700 dark:text-emerald-200 mt-1">Del {(adminEarningsMultiplier * 100).toFixed(0)}% de inversiones</p>
+              </div>
+              <div className="bg-emerald-500 bg-opacity-20 p-3 rounded-lg">
+                <TrendingUp className="h-6 w-6 text-emerald-600" />
+              </div>
+            </div>
+          </Card>
+
+          {/* Inversión Total Aprobada */}
+          <Card className="p-6 bg-gradient-to-br from-cyan-50 to-cyan-100 dark:from-cyan-950 dark:to-cyan-900 border-cyan-200 dark:border-cyan-800">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm font-medium text-cyan-600 dark:text-cyan-300">Inversión Total</p>
+                <p className="text-3xl font-bold text-cyan-900 dark:text-cyan-50 mt-2">${approvedTotal.toFixed(2)}</p>
+                <p className="text-xs text-cyan-700 dark:text-cyan-200 mt-1">De {approvedCount} inversiones</p>
+              </div>
+              <div className="bg-cyan-500 bg-opacity-20 p-3 rounded-lg">
+                <DollarSign className="h-6 w-6 text-cyan-600" />
+              </div>
+            </div>
+          </Card>
+
+          {/* Pérdidas */}
+          <Card className="p-6 bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950 dark:to-red-900 border-red-200 dark:border-red-800">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm font-medium text-red-600 dark:text-red-300">Montos Rechazados</p>
+                <p className="text-3xl font-bold text-red-900 dark:text-red-50 mt-2">${totalLosses.toFixed(2)}</p>
+                <p className="text-xs text-red-700 dark:text-red-200 mt-1">De {rejectedCount} solicitudes</p>
+              </div>
+              <div className="bg-red-500 bg-opacity-20 p-3 rounded-lg">
+                <AlertCircle className="h-6 w-6 text-red-600" />
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Control de Porcentaje de Ganancias */}
+        <Card className="mb-8 p-6 bg-card/50 border">
+          <h3 className="font-semibold mb-4">Configurar Porcentaje de Ganancias</h3>
+          <div className="flex items-center gap-4">
+            <div className="flex-1">
+              <Label>Porcentaje de Ganancias por Inversión</Label>
+              <input 
+                type="range"
+                min="0"
+                max="100"
+                step="1"
+                value={adminEarningsMultiplier * 100}
+                onChange={(e) => setAdminEarningsMultiplier(parseFloat(e.target.value) / 100)}
+                className="w-full mt-2"
+              />
+              <p className="text-sm text-muted-foreground mt-2">Actual: {(adminEarningsMultiplier * 100).toFixed(0)}%</p>
+            </div>
+          </div>
+        </Card>
 
         {/* Advanced Filters */}
         <Card className="mb-6 p-6 bg-card/50 backdrop-blur border">

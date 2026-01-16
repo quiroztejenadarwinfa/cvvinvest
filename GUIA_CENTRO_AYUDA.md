@@ -58,9 +58,13 @@ Sección destacada sobre cómo usar el formulario de contacto:
   - Mensaje
 - **Botón:** Enlace directo a `/contacto`
 
-### 4. **Documentación Legal**
+### 4. **Documentación Legal y Seguridad**
 
-3 cards con links a documentos importantes:
+4 cards con links a documentos importantes:
+
+- **Centro de Seguridad** (`/seguridad`)
+  - Descripción: Características de protección, autenticación y consejos de seguridad
+  - Features: 6 características, 6 consejos, FAQs de seguridad
 
 - **Términos y Condiciones** (`/terminos`)
   - Descripción: Lee nuestros términos legales completos
@@ -131,6 +135,7 @@ Dashboard (Usuario)
     ↓
 Centro de Ayuda (/dashboard/ayuda)
     ├→ /contacto (Formulario)
+    ├→ /seguridad (Centro de Seguridad)
     ├→ /terminos (Legal)
     ├→ /privacidad (Legal)
     └→ /legal (Legal)
@@ -165,7 +170,7 @@ El Centro de Ayuda muestra información sobre:
 ```
 Canales de Contacto: 3
 Preguntas Frecuentes: 8
-Documentos Legales: 3
+Documentos Legales: 4 (incluyendo Centro de Seguridad)
 Información de Plan: 1 (personalizada)
 ```
 

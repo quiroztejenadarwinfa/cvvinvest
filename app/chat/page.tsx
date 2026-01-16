@@ -7,9 +7,9 @@ import { Footer } from '@/components/footer'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { ArrowLeft, Send, AlertCircle, Search, MessageCircle } from 'lucide-react'
+import { ArrowLeft, Send, AlertCircle, Search, MessageCircle, CheckCircle, XCircle, Plus, Clock } from 'lucide-react'
 import { getSessionUser } from '@/lib/auth'
-import { getUserCurrentSession, createOrGetChatSession, addMessageToSession, QUICK_MESSAGES } from '@/lib/chat'
+import { getUserCurrentSession, createOrGetChatSession, addMessageToSession, QUICK_MESSAGES, validateAndCleanChatSession, createNewChatSession, finalizeChatSession, getUserActiveChats, getUserFinalizedChats } from '@/lib/chat'
 
 // Marcar como página dinámica para evitar prerendering estático
 export const dynamic = 'force-dynamic'
@@ -23,6 +23,9 @@ export default function ChatPage() {
   const [message, setMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
+  const [activeChats, setActiveChats] = useState<any[]>([])
+  const [finalizedChats, setFinalizedChats] = useState<any[]>([])
+  const [showChatHistory, setShowChatHistory] = useState(false)
 
   useEffect(() => {
     const currentUser = getSessionUser()
@@ -30,6 +33,10 @@ export default function ChatPage() {
       router.push('/login')
       return
     }
+    
+    // Validar y limpiar sesión de chat si el usuario cambió
+    validateAndCleanChatSession(currentUser.id)
+    
     setUser(currentUser)
 
     // Cargar sesión
@@ -44,6 +51,10 @@ export default function ChatPage() {
       )
       setSession(newSession)
     }
+    
+    // Cargar chats activos y finalizados
+    setActiveChats(getUserActiveChats(currentUser.id))
+    setFinalizedChats(getUserFinalizedChats(currentUser.id))
     setLoading(false)
 
     // Verificar si viene desde depósitos y debe enviar mensaje automático
@@ -122,7 +133,7 @@ export default function ChatPage() {
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <main className="flex-1 pt-24 pb-16">
-        <div className="container mx-auto px-4 max-w-4xl">
+        <div className="container mx-auto px-4">
           {/* Header */}
           <div className="flex items-center gap-4 mb-8">
             <Button
@@ -138,9 +149,95 @@ export default function ChatPage() {
             </div>
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-6">
+          {/* Main Grid: Sidebar + Chat */}
+          <div className="grid lg:grid-cols-4 gap-6">
+            {/* Sidebar - Chat List */}
+            <div className="lg:col-span-1">
+              <Card className="border shadow-md overflow-hidden">
+                {/* New Chat Button */}
+                <div className="p-4 border-b bg-gradient-to-r from-primary/10 to-primary/5">
+                  <Button
+                    onClick={() => {
+                      if (user) {
+                        const newChat = createNewChatSession(user.id, user.name, user.email)
+                        setSession(newChat)
+                        setActiveChats(getUserActiveChats(user.id))
+                      }
+                    }}
+                    className="w-full gap-2"
+                    size="sm"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Nuevo Chat
+                  </Button>
+                </div>
+
+                {/* Active Chats */}
+                <div className="p-4 max-h-72 overflow-y-auto border-b">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase mb-3">Chats Activos ({activeChats.length})</p>
+                  {activeChats.length > 0 ? (
+                    <div className="space-y-2">
+                      {activeChats.map((chat: any) => (
+                        <button
+                          key={chat.id}
+                          onClick={() => {
+                            setSession(chat)
+                            setShowChatHistory(false)
+                          }}
+                          className={`w-full text-left p-2 rounded-lg transition-all ${
+                            session?.id === chat.id
+                              ? 'bg-primary text-primary-foreground'
+                              : 'hover:bg-secondary'
+                          }`}
+                        >
+                          <div className="text-xs font-medium truncate">
+                            {chat.messages.length > 0 ? chat.messages[0].message.substring(0, 30) : 'Chat vacío'}...
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {new Date(chat.createdAt).toLocaleDateString('es-ES')}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">No hay chats activos</p>
+                  )}
+                </div>
+
+                {/* Finalized Chats */}
+                <div className="p-4 max-h-64 overflow-y-auto">
+                  <button
+                    onClick={() => setShowChatHistory(!showChatHistory)}
+                    className="text-xs font-semibold text-muted-foreground uppercase mb-3 w-full text-left hover:text-foreground transition-colors flex items-center gap-2"
+                  >
+                    <Clock className="h-3 w-3" />
+                    Chats Finalizados ({finalizedChats.length})
+                  </button>
+                  {showChatHistory && finalizedChats.length > 0 && (
+                    <div className="space-y-2">
+                      {finalizedChats.map((chat: any) => (
+                        <div key={chat.id} className="text-left p-2 rounded-lg bg-secondary/50 text-xs">
+                          <div className="truncate font-medium flex items-center gap-1">
+                            {chat.status === 'resolved' ? (
+                              <CheckCircle className="h-3 w-3 text-green-600" />
+                            ) : (
+                              <XCircle className="h-3 w-3 text-red-600" />
+                            )}
+                            {chat.messages[0]?.message.substring(0, 25)}...
+                          </div>
+                          <div className="text-muted-foreground mt-1">
+                            {new Date(chat.updatedAt).toLocaleDateString('es-ES')}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </Card>
+            </div>
+
             {/* Chat Area */}
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-3">
               <Card className="h-[600px] flex flex-col border-0 shadow-md overflow-hidden">
                 {/* Search Bar */}
                 <div className="p-5 border-b bg-gradient-to-r from-primary/10 to-primary/5 relative">
@@ -184,33 +281,78 @@ export default function ChatPage() {
                 </div>
 
                 {/* Input */}
-                <div className="border-t bg-card p-4 flex gap-3">
-                  <input
-                    type="text"
-                    placeholder="Escribe tu mensaje..."
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault()
-                        handleSendMessage()
-                      }
-                    }}
-                    className="flex-1 px-4 py-2.5 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
-                  />
-                  <Button
-                    onClick={handleSendMessage}
-                    disabled={isLoading || !message.trim()}
-                    className="h-10 px-4"
-                  >
-                    <Send className="h-4 w-4" />
-                  </Button>
+                <div className="border-t bg-card p-4 space-y-3">
+                  <div className="flex gap-3">
+                    <input
+                      type="text"
+                      placeholder="Escribe tu mensaje..."
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault()
+                          handleSendMessage()
+                        }
+                      }}
+                      className="flex-1 px-4 py-2.5 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                    />
+                    <Button
+                      onClick={handleSendMessage}
+                      disabled={isLoading || !message.trim()}
+                      className="h-10 px-4"
+                    >
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  {/* Chat Actions - Finalize Chat */}
+                  {session && session.status === 'open' && (
+                    <div className="flex gap-2 justify-end">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          finalizeChatSession(session.id, 'cancelled')
+                          setFinalizedChats(getUserFinalizedChats(user.id))
+                          setActiveChats(getUserActiveChats(user.id))
+                          // Crear nuevo chat automáticamente
+                          const newChat = createNewChatSession(user.id, user.name, user.email)
+                          setSession(newChat)
+                        }}
+                        className="text-xs gap-1"
+                      >
+                        <XCircle className="h-3 w-3" />
+                        Cancelar Chat
+                      </Button>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => {
+                          finalizeChatSession(session.id, 'resolved')
+                          setFinalizedChats(getUserFinalizedChats(user.id))
+                          setActiveChats(getUserActiveChats(user.id))
+                          // Crear nuevo chat automáticamente
+                          const newChat = createNewChatSession(user.id, user.name, user.email)
+                          setSession(newChat)
+                        }}
+                        className="text-xs gap-1 bg-green-600 hover:bg-green-700"
+                      >
+                        <CheckCircle className="h-3 w-3" />
+                        Caso Resuelto
+                      </Button>
+                    </div>
+                  )}
+                  {session && session.status !== 'open' && (
+                    <div className="text-xs text-center p-2 bg-muted rounded-lg text-muted-foreground">
+                      Este chat ha sido {session.status === 'resolved' ? '✓ resuelto' : '✗ cancelado'}
+                    </div>
+                  )}
                 </div>
               </Card>
             </div>
 
             {/* Sidebar with Quick Messages */}
-            <div className="space-y-4">
+            <div className="space-y-4 hidden lg:block">
               <Card className="p-5 border-0 shadow-md">
                 <h3 className="font-semibold mb-4 text-lg">Temas Frecuentes</h3>
                 <div className="space-y-2">

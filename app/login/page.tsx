@@ -151,8 +151,8 @@ export default function LoginPage() {
 
       setSessionUser(user)
       toast({
-        title: "¡Bienvenido!",
-        description: "Has iniciado sesión correctamente.",
+        title: `¡Bienvenido, ${user.name}!`,
+        description: `Iniciaste sesión con: ${user.email} | Plan: ${user.plan.toUpperCase()}`,
       })
       router.push("/dashboard")
     } else {

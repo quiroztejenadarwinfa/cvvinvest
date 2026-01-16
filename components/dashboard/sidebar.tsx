@@ -71,18 +71,27 @@ export function DashboardSidebar({ user, onLogout }: DashboardSidebarProps) {
         </Link>
       </div>
 
-      {/* User Info */}
-      <div className="p-4 border-b border-border">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-            <span className="text-primary font-bold">{user.name[0]}</span>
+      {/* User Info - Enhanced */}
+      <div className="p-4 border-b border-border bg-gradient-to-br from-primary/5 to-primary/10">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary/50 flex items-center justify-center text-white font-bold text-lg">
+            {user.name[0].toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-medium truncate">{user.name}</div>
-            <div className="flex items-center gap-1">
-              <span className={cn("w-2 h-2 rounded-full", planColors[user.plan])} />
-              <span className="text-xs text-muted-foreground capitalize">Plan {user.plan}</span>
-            </div>
+            <div className="font-semibold truncate text-sm">{user.name}</div>
+            <div className="text-xs text-muted-foreground truncate">{user.email}</div>
+          </div>
+        </div>
+        
+        {/* Plan and Balance Card */}
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <div className="bg-white dark:bg-slate-900 p-2 rounded-lg border border-border">
+            <p className="text-muted-foreground font-medium uppercase">Plan</p>
+            <p className={cn("font-bold capitalize", planColors[user.plan].replace('bg-', 'text-'))}>{user.plan}</p>
+          </div>
+          <div className="bg-white dark:bg-slate-900 p-2 rounded-lg border border-border">
+            <p className="text-muted-foreground font-medium uppercase">Saldo</p>
+            <p className="font-bold text-emerald-600 dark:text-emerald-400">${user.balance?.toFixed(2) || "0.00"}</p>
           </div>
         </div>
       </div>

@@ -20,7 +20,9 @@ import {
   Filter,
   ArrowUpRight,
   Calendar,
-  DollarSign
+  DollarSign,
+  Coins,
+  Briefcase
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { clearSession } from '@/lib/auth'
@@ -174,6 +176,26 @@ export default function DashboardInvestmentsPage() {
     .filter((inv) => inv.status === 'aprobado')
     .reduce((sum, inv) => sum + inv.amount, 0)
 
+  // Calcular ganancias/pérdidas
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  
+  const investmentsToday = investments.filter(inv => {
+    const invDate = new Date(inv.createdAt)
+    invDate.setHours(0, 0, 0, 0)
+    return invDate.getTime() === today.getTime()
+  })
+  
+  const earningsToday = investmentsToday.filter(inv => inv.status === 'aprobado').length > 0 
+    ? investmentsToday.filter(inv => inv.status === 'aprobado').reduce((sum, inv) => sum + (inv.amount * 0.05), 0)
+    : 0
+  
+  const totalEarnings = approvedCount > 0 
+    ? investments.filter(inv => inv.status === 'aprobado').reduce((sum, inv) => sum + (inv.amount * 0.05), 0)
+    : 0
+  
+  const losses = investments.filter(inv => inv.status === 'rechazado').reduce((sum, inv) => sum + inv.amount, 0)
+
   return (
     <FeatureGuard
       user={user}
@@ -206,69 +228,141 @@ export default function DashboardInvestmentsPage() {
           <DashboardHeader user={user} />
           <main className="flex-1 overflow-auto p-8">
             <div className="max-w-7xl mx-auto">
-              {/* Header */}
-              <div className="mb-8">
-                <h1 className="text-4xl font-bold mb-2">Mis Inversiones</h1>
-                <p className="text-muted-foreground text-lg">Gestiona y controla tus inversiones</p>
+              {/* Header Premium con Decoraciones */}
+              <div className="mb-12 relative overflow-hidden rounded-2xl p-8 text-white shadow-lg bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600">
+                {/* Decorative Background Elements */}
+                <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                  <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
+                  <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
+                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-white/5 rounded-full blur-3xl" />
+                </div>
+
+                {/* Content */}
+                <div className="relative z-10 flex items-center justify-between">
+                  <div>
+                    <h1 className="text-5xl font-bold mb-2 flex items-center gap-3">
+                      <span className="w-2 h-12 bg-white/30 rounded-full" />
+                      Mis Inversiones
+                    </h1>
+                    <p className="text-blue-100 text-lg">Gestiona, monitorea y maximiza tus retornos</p>
+                  </div>
+                  <div className="hidden md:block text-right">
+                    <p className="text-blue-100 text-sm mb-2">Cartera Total</p>
+                    <p className="text-4xl font-bold flex items-baseline gap-2">
+                      <span>$</span>
+                      <span className="text-5xl">{totalInvested.toFixed(0)}</span>
+                      <span className="text-lg text-blue-100">.{(totalInvested * 100 % 100).toFixed(0).padStart(2, '0')}</span>
+                    </p>
+                  </div>
+                </div>
               </div>
 
-              {/* Enhanced Stats Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                {/* Total Invested */}
-                <Card className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-blue-200 dark:border-blue-800">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-blue-600 dark:text-blue-300">Total Invertido</p>
-                      <p className="text-3xl font-bold text-blue-900 dark:text-blue-50 mt-2">${totalInvested.toFixed(2)}</p>
-                      <p className="text-xs text-blue-700 dark:text-blue-200 mt-1">{approvedCount} inversiones aprobadas</p>
+              {/* Enhanced Stats Cards - 3 Column Layout */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                {/* Total Invested - Premium Card */}
+                <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border border-blue-200 dark:border-blue-800 p-6 shadow-md hover:shadow-xl transition-all duration-300">
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="relative">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="p-3 bg-blue-500/10 rounded-xl group-hover:bg-blue-500/20 transition-colors">
+                        <DollarSign className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <Badge className="bg-blue-600 text-white">Activo</Badge>
                     </div>
-                    <div className="bg-blue-500 bg-opacity-20 p-3 rounded-lg">
-                      <DollarSign className="h-6 w-6 text-blue-600" />
-                    </div>
+                    <p className="text-sm font-medium text-blue-600 dark:text-blue-300 mb-2">Total Invertido</p>
+                    <p className="text-4xl font-bold text-blue-900 dark:text-blue-50 mb-1">${totalInvested.toFixed(2)}</p>
+                    <p className="text-xs text-blue-700 dark:text-blue-200">✓ {approvedCount} inversiones activas</p>
                   </div>
-                </Card>
+                </div>
 
-                {/* Pending */}
-                <Card className="p-6 bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950 dark:to-amber-900 border-amber-200 dark:border-amber-800">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-amber-600 dark:text-amber-300">Pendiente</p>
-                      <p className="text-3xl font-bold text-amber-900 dark:text-amber-50 mt-2">{pendingCount}</p>
-                      <p className="text-xs text-amber-700 dark:text-amber-200 mt-1">Solicitudes en revisión</p>
+                {/* Pending - Premium Card */}
+                <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950 dark:to-amber-900 border border-amber-200 dark:border-amber-800 p-6 shadow-md hover:shadow-xl transition-all duration-300">
+                  <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="relative">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="p-3 bg-amber-500/10 rounded-xl group-hover:bg-amber-500/20 transition-colors">
+                        <Clock className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+                      </div>
+                      <Badge className="bg-amber-600 text-white">En Revisión</Badge>
                     </div>
-                    <div className="bg-amber-500 bg-opacity-20 p-3 rounded-lg">
-                      <Clock className="h-6 w-6 text-amber-600" />
-                    </div>
+                    <p className="text-sm font-medium text-amber-600 dark:text-amber-300 mb-2">Solicitudes Pendientes</p>
+                    <p className="text-4xl font-bold text-amber-900 dark:text-amber-50 mb-1">{pendingCount}</p>
+                    <p className="text-xs text-amber-700 dark:text-amber-200">Esperando aprobación</p>
                   </div>
-                </Card>
+                </div>
 
-                {/* Approved */}
-                <Card className="p-6 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-green-200 dark:border-green-800">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-green-600 dark:text-green-300">Aprobado</p>
-                      <p className="text-3xl font-bold text-green-900 dark:text-green-50 mt-2">{approvedCount}</p>
-                      <p className="text-xs text-green-700 dark:text-green-200 mt-1">Inversiones activas</p>
+                {/* Approved - Premium Card */}
+                <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border border-green-200 dark:border-green-800 p-6 shadow-md hover:shadow-xl transition-all duration-300">
+                  <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="relative">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="p-3 bg-green-500/10 rounded-xl group-hover:bg-green-500/20 transition-colors">
+                        <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
+                      </div>
+                      <Badge className="bg-green-600 text-white">Aprobado</Badge>
                     </div>
-                    <div className="bg-green-500 bg-opacity-20 p-3 rounded-lg">
-                      <CheckCircle className="h-6 w-6 text-green-600" />
-                    </div>
+                    <p className="text-sm font-medium text-green-600 dark:text-green-300 mb-2">Inversiones Activas</p>
+                    <p className="text-4xl font-bold text-green-900 dark:text-green-50 mb-1">{approvedCount}</p>
+                    <p className="text-xs text-green-700 dark:text-green-200">Generando retornos</p>
                   </div>
-                </Card>
+                </div>
+              </div>
 
-                {/* Total Requests */}
-                <Card className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 border-purple-200 dark:border-purple-800">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-purple-600 dark:text-purple-300">Total de Solicitudes</p>
-                      <p className="text-3xl font-bold text-purple-900 dark:text-purple-50 mt-2">{investments.length}</p>
-                      <p className="text-xs text-purple-700 dark:text-purple-200 mt-1">Todas las inversiones</p>
-                    </div>
-                    <div className="bg-purple-500 bg-opacity-20 p-3 rounded-lg">
-                      <TrendingUp className="h-6 w-6 text-purple-600" />
+              {/* Earnings/Losses Statistics - Premium Design */}
+              <div className="mb-12">
+                <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+                  <div className="w-1 h-8 bg-gradient-to-b from-emerald-500 to-cyan-500 rounded-full" />
+                  Análisis de Ganancias
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Ganancias del Día */}
+                  <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950 dark:to-emerald-900 border border-emerald-200 dark:border-emerald-800 p-6 shadow-md hover:shadow-xl transition-all duration-300">
+                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="relative">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="p-3 bg-emerald-500/10 rounded-xl group-hover:bg-emerald-500/20 transition-colors">
+                          <ArrowUpRight className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                        </div>
+                        <Badge className="bg-emerald-600 text-white">Hoy</Badge>
+                      </div>
+                      <p className="text-sm font-medium text-emerald-600 dark:text-emerald-300 mb-2">Ganancias Hoy</p>
+                      <p className="text-4xl font-bold text-emerald-900 dark:text-emerald-50 mb-1">${earningsToday.toFixed(2)}</p>
+                      <p className="text-xs text-emerald-700 dark:text-emerald-200">De {investmentsToday.length} inversiones</p>
                     </div>
                   </div>
-                </Card>
+
+                  {/* Total Ganancias */}
+                  <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-cyan-50 to-cyan-100 dark:from-cyan-950 dark:to-cyan-900 border border-cyan-200 dark:border-cyan-800 p-6 shadow-md hover:shadow-xl transition-all duration-300">
+                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="relative">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="p-3 bg-cyan-500/10 rounded-xl group-hover:bg-cyan-500/20 transition-colors">
+                          <TrendingUp className="h-6 w-6 text-cyan-600 dark:text-cyan-400" />
+                        </div>
+                        <Badge className="bg-cyan-600 text-white">Total</Badge>
+                      </div>
+                      <p className="text-sm font-medium text-cyan-600 dark:text-cyan-300 mb-2">Total Ganado</p>
+                      <p className="text-4xl font-bold text-cyan-900 dark:text-cyan-50 mb-1">${totalEarnings.toFixed(2)}</p>
+                      <p className="text-xs text-cyan-700 dark:text-cyan-200">Ganancia general</p>
+                    </div>
+                  </div>
+
+                  {/* Pérdidas */}
+                  <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950 dark:to-red-900 border border-red-200 dark:border-red-800 p-6 shadow-md hover:shadow-xl transition-all duration-300">
+                    <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="relative">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="p-3 bg-red-500/10 rounded-xl group-hover:bg-red-500/20 transition-colors">
+                          <XCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
+                        </div>
+                        <Badge className="bg-red-600 text-white">Rechazadas</Badge>
+                      </div>
+                      <p className="text-sm font-medium text-red-600 dark:text-red-300 mb-2">Pérdidas</p>
+                      <p className="text-4xl font-bold text-red-900 dark:text-red-50 mb-1">${losses.toFixed(2)}</p>
+                      <p className="text-xs text-red-700 dark:text-red-200">Inversiones rechazadas</p>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Earnings Cards for Approved Investments */}
@@ -283,10 +377,15 @@ export default function DashboardInvestmentsPage() {
                 </div>
               )}
 
+              {/* Divider */}
+              <div className="mb-8 h-px bg-gradient-to-r from-transparent via-slate-300 dark:via-slate-700 to-transparent" />
+
               {/* Advanced Filters */}
-              <Card className="p-6 mb-8 bg-card/50 backdrop-blur border">
-                <div className="flex items-center gap-2 mb-4 cursor-pointer" onClick={() => setShowFilters(!showFilters)}>
-                  <Filter className="h-5 w-5" />
+              <Card className="p-6 mb-8 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900/50 dark:to-slate-800/50 backdrop-blur border border-slate-200 dark:border-slate-700 shadow-sm">
+                <div className="flex items-center gap-2 mb-4 cursor-pointer hover:opacity-75 transition-opacity" onClick={() => setShowFilters(!showFilters)}>
+                  <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg">
+                    <Filter className="h-5 w-5 text-white" />
+                  </div>
                   <h3 className="font-semibold">Filtros Avanzados</h3>
                   <div className="ml-auto text-xs bg-primary text-primary-foreground px-2 py-1 rounded-full">
                     {[statusFilter !== 'all' ? 1 : 0, amountFilter !== 'all' ? 1 : 0, sortBy !== 'reciente' ? 1 : 0].reduce((a, b) => a + b)} activo{[statusFilter !== 'all' ? 1 : 0, amountFilter !== 'all' ? 1 : 0, sortBy !== 'reciente' ? 1 : 0].reduce((a, b) => a + b) !== 1 ? 's' : ''}
@@ -299,26 +398,26 @@ export default function DashboardInvestmentsPage() {
                 )}>
                   {/* Search */}
                   <div>
-                    <label className="text-sm font-medium mb-2 block">Búsqueda</label>
-                    <div className="relative">
-                      <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <label className="text-sm font-medium mb-2 block text-slate-700 dark:text-slate-300">Búsqueda</label>
+                    <div className="relative group">
+                      <Search className="absolute left-3 top-3 h-4 w-4 text-blue-500 dark:text-blue-400 group-focus-within:text-purple-500 transition-colors" />
                       <input
                         type="text"
                         placeholder="Buscar plan o ID..."
                         value={searchTerm}
                         onChange={(e) => handleSearch(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-input rounded-lg bg-background hover:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                        className="w-full pl-10 pr-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 hover:border-blue-300 dark:hover:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/30 dark:focus:ring-blue-400/30 transition-all shadow-sm"
                       />
                     </div>
                   </div>
 
                   {/* Status Filter */}
                   <div>
-                    <label className="text-sm font-medium mb-2 block">Estado</label>
+                    <label className="text-sm font-medium mb-2 block text-slate-700 dark:text-slate-300">Estado</label>
                     <select
                       value={statusFilter}
                       onChange={(e) => handleStatusFilter(e.target.value)}
-                      className="w-full px-4 py-2 border border-input rounded-lg bg-background hover:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                      className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 hover:border-emerald-300 dark:hover:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:focus:ring-emerald-400/30 transition-all shadow-sm text-slate-900 dark:text-slate-50"
                     >
                       <option value="all">Todos los estados</option>
                       <option value="pendiente">Pendiente</option>
@@ -329,11 +428,11 @@ export default function DashboardInvestmentsPage() {
 
                   {/* Amount Range Filter */}
                   <div>
-                    <label className="text-sm font-medium mb-2 block">Rango de Monto</label>
+                    <label className="text-sm font-medium mb-2 block text-slate-700 dark:text-slate-300">Rango de Monto</label>
                     <select
                       value={amountFilter}
                       onChange={(e) => handleAmountFilter(e.target.value)}
-                      className="w-full px-4 py-2 border border-input rounded-lg bg-background hover:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                      className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 hover:border-purple-300 dark:hover:border-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500/30 dark:focus:ring-purple-400/30 transition-all shadow-sm text-slate-900 dark:text-slate-50"
                     >
                       <option value="all">Todos los montos</option>
                       <option value="bajo">Menos de $1,000</option>
@@ -344,11 +443,11 @@ export default function DashboardInvestmentsPage() {
 
                   {/* Sort Filter */}
                   <div>
-                    <label className="text-sm font-medium mb-2 block">Ordenar Por</label>
+                    <label className="text-sm font-medium mb-2 block text-slate-700 dark:text-slate-300">Ordenar Por</label>
                     <select
                       value={sortBy}
                       onChange={(e) => handleSortChange(e.target.value)}
-                      className="w-full px-4 py-2 border border-input rounded-lg bg-background hover:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                      className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 hover:border-cyan-300 dark:hover:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 dark:focus:ring-cyan-400/30 transition-all shadow-sm text-slate-900 dark:text-slate-50"
                     >
                       <option value="reciente">Más reciente</option>
                       <option value="antiguo">Más antiguo</option>
@@ -362,19 +461,43 @@ export default function DashboardInvestmentsPage() {
             {/* Investments List */}
             <div className="space-y-4">
               {filteredInvestments.length === 0 ? (
-                <Alert className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950 dark:to-cyan-950 border-blue-200 dark:border-blue-800">
-                  <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                  <AlertDescription className="text-blue-800 dark:text-blue-200">
-                    {investments.length === 0
-                      ? "No tienes inversiones registradas"
-                      : "No hay inversiones que coincidan con tus filtros"}
+                <Alert className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950/50 dark:to-cyan-950/50 border-2 border-dashed border-blue-200 dark:border-blue-800/50 rounded-xl">
+                  <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                  <AlertDescription className="text-blue-800 dark:text-blue-200 text-sm">
+                    <p className="font-semibold mb-1">
+                      {investments.length === 0
+                        ? "No tienes inversiones registradas"
+                        : "No hay inversiones que coincidan con tus filtros"}
+                    </p>
+                    <p className="text-blue-700/70 dark:text-blue-300/70 text-xs">
+                      {investments.length === 0 
+                        ? "Comienza tu primer inversión para ver resultados aquí"
+                        : "Intenta modificar los filtros o crear una nueva inversión"}
+                    </p>
                   </AlertDescription>
                 </Alert>
               ) : (
                 <div className="space-y-4">
-                  {/* Results Counter */}
-                  <div className="text-sm text-muted-foreground">
-                    Mostrando <span className="font-semibold text-foreground">{filteredInvestments.length}</span> de <span className="font-semibold text-foreground">{investments.length}</span> inversiones
+                  {/* Results Counter - Enhanced Design */}
+                  <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+                    <div className="flex items-center gap-3">
+                      <div className="h-2 w-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full" />
+                      <p className="text-sm text-slate-600 dark:text-slate-300">
+                        Mostrando <span className="font-bold text-blue-600 dark:text-blue-400">{filteredInvestments.length}</span> de <span className="font-bold text-slate-700 dark:text-slate-200">{investments.length}</span> inversiones
+                      </p>
+                    </div>
+                    {filteredInvestments.length !== investments.length && (
+                      <button 
+                        onClick={() => {
+                          setSearchTerm('')
+                          setStatusFilter('all')
+                          setAmountFilter('all')
+                        }}
+                        className="text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      >
+                        Limpiar filtros
+                      </button>
+                    )}
                   </div>
 
                   {/* Investment Cards */}
@@ -434,7 +557,7 @@ export default function DashboardInvestmentsPage() {
                               <p className="text-xs font-medium text-slate-600 dark:text-slate-300 uppercase tracking-wider">Solicitado</p>
                               <p className="text-sm font-bold text-slate-900 dark:text-slate-50 mt-1">
                                 <Calendar className="inline h-4 w-4 mr-1" />
-                                {new Date(investment.createdAt).toLocaleDateString(language === 'en' ? 'en-US' : 'es-ES', {
+                                {new Date(investment.createdAt).toLocaleDateString('es-ES', {
                                   year: 'numeric',
                                   month: 'short',
                                   day: '2-digit',

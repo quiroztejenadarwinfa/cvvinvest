@@ -14,6 +14,8 @@ export interface User {
   plan: "gratuito" | "estandar" | "pro" | "vip" | "elite"
   balance: number
   createdAt: Date
+  planChangedAt?: Date
+  previousPlan?: "gratuito" | "estandar" | "pro" | "vip" | "elite"
 }
 
 export interface Deposit {
@@ -47,9 +49,37 @@ export function setSessionUser(user: User): void {
   localStorage.setItem("cvvinvest_user", JSON.stringify(user))
 }
 
-// Función para cerrar sesión
+// Función para cerrar sesión - Limpia TODOS los datos de la sesión anterior
 export function clearSession(): void {
+  // Limpiar datos del usuario
   localStorage.removeItem("cvvinvest_user")
+  
+  // Limpiar chatbot y mensajes
+  localStorage.removeItem("cvvinvest_chat_sessions")
+  localStorage.removeItem("cvvinvest_user_current_session")
+  localStorage.removeItem("messages")
+  
+  // Limpiar notificaciones
+  localStorage.removeItem("notifications")
+  localStorage.removeItem("user_notifications")
+  localStorage.removeItem("admin_notifications")
+  
+  // Limpiar datos de sesión de dispositivos
+  localStorage.removeItem("sessions")
+  
+  // Limpiar depósitos y retiros temporales
+  localStorage.removeItem("deposits")
+  localStorage.removeItem("withdrawals")
+  
+  // Limpiar inversiones temporales
+  localStorage.removeItem("investments")
+  
+  // Limpiar otros datos de sesión
+  localStorage.removeItem("balance")
+  localStorage.removeItem("plan")
+  localStorage.removeItem("email")
+  localStorage.removeItem("name")
+  localStorage.removeItem("role")
 }
 
 // Generar ID único

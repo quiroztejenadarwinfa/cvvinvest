@@ -8,6 +8,7 @@ import {
   getUserCurrentSession,
   createOrGetChatSession,
   addMessageToSession,
+  validateAndCleanChatSession,
   type ChatSession,
 } from '@/lib/chat'
 
@@ -33,6 +34,9 @@ export function ChatWidget({ userId, userName, userEmail, isAdmin = false }: Cha
 
   useEffect(() => {
     if (!isAuthenticated || !mounted) return
+
+    // Validar y limpiar sesión de chat si el usuario cambió
+    validateAndCleanChatSession(userId!)
 
     const existing = getUserCurrentSession(userId!)
     if (existing) {

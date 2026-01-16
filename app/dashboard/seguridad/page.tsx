@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Switch } from "@/components/ui/switch"
-import { AlertCircle, CheckCircle, Lock, Shield } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { AlertCircle, CheckCircle, Lock, Shield, Smartphone, Monitor } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { getSessionUser } from "@/lib/auth"
 
@@ -26,6 +27,8 @@ export default function UserSecurityPage() {
   const [newPin, setNewPin] = useState("")
   const [pinSaved, setPinSaved] = useState(false)
   const [showPin, setShowPin] = useState(false)
+  const [deviceInfo, setDeviceInfo] = useState<any>(null)
+  const [otherDevices, setOtherDevices] = useState<any[]>([])
   const { toast } = useToast()
 
   useEffect(() => {
@@ -35,6 +38,29 @@ export default function UserSecurityPage() {
     if (savedConfig) {
       setConfig(JSON.parse(savedConfig))
     }
+
+    // Obtener información del dispositivo actual
+    const sessions = JSON.parse(localStorage.getItem("user_sessions") || "[]")
+    const currentSession = {
+      id: `session_${Date.now()}`,
+      device: navigator.userAgent.includes("Windows") ? "Windows" : navigator.userAgent.includes("Mac") ? "Mac" : navigator.userAgent.includes("Linux") ? "Linux" : "Dispositivo desconocido",
+      browser: navigator.userAgent.includes("Chrome") ? "Chrome" : navigator.userAgent.includes("Firefox") ? "Firefox" : navigator.userAgent.includes("Safari") ? "Safari" : "Navegador desconocido",
+      ip: "192.168.100.68",
+      timestamp: new Date().toISOString(),
+      active: true
+    }
+
+    // Guardar sesión actual
+    const updatedSessions = [currentSession, ...sessions.filter((s: any) => s.id !== currentSession.id).slice(0, 4)]
+    localStorage.setItem("user_sessions", JSON.stringify(updatedSessions))
+
+    // Obtener dispositivos únicos (sin duplicados)
+    const uniqueOtherDevices = updatedSessions.slice(1).filter((device: any, index: number, self: any[]) =>
+      index === self.findIndex((d: any) => d.device === device.device && d.browser === device.browser && d.ip === device.ip)
+    )
+
+    setDeviceInfo(currentSession)
+    setOtherDevices(uniqueOtherDevices)
   }, [user])
 
   const handleToggle2FA = (enabled: boolean) => {
@@ -219,30 +245,106 @@ export default function UserSecurityPage() {
 
         {/* Active Sessions */}
         <TabsContent value="sesiones" className="space-y-4 mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Sesiones Activas</CardTitle>
-              <CardDescription>
-                Dispositivos donde has iniciado sesión
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="p-4 border rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Sesión Actual</p>
-                    <p className="text-sm text-muted-foreground">Este navegador</p>
+          {deviceInfo && (
+            <>
+              {/* Dispositivo Actual */}
+              <Card className="bg-gradient-to-br from-green-900 to-green-800 border-green-700">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center gap-2">
+                    <Smartphone className="w-5 h-5" />
+                    Dispositivo Actual
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-green-200">Sistema Operativo</p>
+                      <p className="text-lg font-semibold text-white">{deviceInfo?.device}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-green-200">Navegador</p>
+                      <p className="text-lg font-semibold text-white">{deviceInfo?.browser}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-green-200">Dirección IP</p>
+                      <p className="text-lg font-semibold text-white">{deviceInfo?.ip}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-green-200">Última Conexión</p>
+                      <p className="text-lg font-semibold text-white">
+                        {deviceInfo?.timestamp ? new Date(deviceInfo.timestamp).toLocaleString("es-ES") : "Ahora"}
+                      </p>
+                    </div>
                   </div>
-                  <span className="px-3 py-1 bg-green-100 dark:bg-green-950 text-green-800 dark:text-green-200 rounded-full text-sm font-medium">
-                    Activa
-                  </span>
+                  <div className="pt-4 border-t border-green-700/50">
+                    <Badge className="bg-green-600 text-green-100">✓ Activo Ahora</Badge>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Resumen */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Monitor className="w-5 h-5" />
+                    Resumen de Dispositivos
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-600 dark:text-slate-300">Dispositivos activos</span>
+                      <span className="text-xl font-bold text-blue-600 dark:text-blue-400">{1 + otherDevices.length}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-600 dark:text-slate-300">Últimas 24 horas</span>
+                      <span className="text-lg font-semibold text-green-600 dark:text-green-400">{otherDevices.length}</span>
+                    </div>
+                    <div className="pt-3 border-t border-slate-200 dark:border-slate-700">
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
+                        {otherDevices.length > 0 ? "Hay accesos de otros dispositivos" : "Solo tu dispositivo actual"}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Otros Dispositivos */}
+              {otherDevices.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-bold mb-4">Otros Dispositivos Conectados</h3>
+                  <div className="space-y-3">
+                    {otherDevices.map((device, index) => (
+                      <Card key={device.id || index}>
+                        <CardContent className="pt-6">
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div>
+                              <p className="text-sm text-slate-500 dark:text-slate-400">Dispositivo</p>
+                              <p className="font-semibold">{device.device}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-slate-500 dark:text-slate-400">Navegador</p>
+                              <p className="font-semibold">{device.browser}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-slate-500 dark:text-slate-400">IP</p>
+                              <p className="font-semibold">{device.ip}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-slate-500 dark:text-slate-400">Última Conexión</p>
+                              <p className="font-semibold">
+                                {device.timestamp ? new Date(device.timestamp).toLocaleString("es-ES") : "Sin datos"}
+                              </p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
                 </div>
-              </div>
-              <Button variant="outline" className="w-full">
-                Cerrar Sesiones en Otros Dispositivos
-              </Button>
-            </CardContent>
-          </Card>
+              )}
+            </>
+          )}
         </TabsContent>
       </Tabs>
     </div>

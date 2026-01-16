@@ -4,7 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Logo } from "@/components/logo"
-import { Menu, X, LogOut, DollarSign } from "lucide-react"
+import { Menu, X, LogOut, DollarSign, User as UserIcon, Shield } from "lucide-react"
 import { useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import { getSessionUser, clearSession } from "@/lib/auth"
@@ -61,11 +61,57 @@ export function Navbar() {
           ))}
         </div>
 
+        {/* User Account Info Card - Desktop */}
+        {mounted && user && (
+          <div className="hidden lg:flex items-center gap-3 px-4 py-2 rounded-lg bg-primary/5 border border-primary/10">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                {user.name?.[0]?.toUpperCase() || "U"}
+              </div>
+              <div className="flex flex-col gap-0 min-w-0">
+                <span className="text-xs font-semibold text-foreground truncate">
+                  {user.name || "Usuario"}
+                </span>
+                <span className="text-xs text-muted-foreground truncate">
+                  {user.email || ""}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <Shield className="h-3.5 w-3.5 text-primary/60" />
+              <span className="text-xs font-semibold px-2 py-0.5 rounded bg-primary/10 text-primary">
+                {user.plan?.charAt(0).toUpperCase() + user.plan?.slice(1) || "Gratis"}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* User Account Info Card - Mobile */}
+        {mounted && user && (
+          <button
+            onClick={() => {
+              router.push('/dashboard')
+              setMobileMenuOpen(false)
+            }}
+            className="md:hidden flex items-center gap-2 px-2 py-1 rounded bg-primary/5 border border-primary/10 hover:bg-primary/10 transition-all"
+          >
+            <div className="h-7 w-7 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+              {user.name?.[0]?.toUpperCase() || "U"}
+            </div>
+          </button>
+        )}
+
         {/* Auth Buttons */}
         <div className="hidden md:flex items-center gap-3">
           <ThemeToggle />
           {user ? (
             <>
+              <Button asChild variant="outline" className="gap-2">
+                <Link href="/dashboard">
+                  <UserIcon className="h-4 w-4" />
+                  Panel
+                </Link>
+              </Button>
               <Button asChild variant="outline" className="gap-2">
                 <Link href="/depositos">
                   <DollarSign className="h-4 w-4" />
@@ -119,6 +165,28 @@ export function Navbar() {
             <div className="flex flex-col gap-2 pt-4 border-t border-border">
               {user ? (
                 <>
+                  {/* User Info Card in Mobile Menu */}
+                  <div className="px-3 py-2 rounded-lg bg-primary/5 border border-primary/10 mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                        {user.name?.[0]?.toUpperCase() || "U"}
+                      </div>
+                      <div className="flex flex-col gap-0 min-w-0">
+                        <span className="text-xs font-semibold text-foreground truncate">
+                          {user.name || "Usuario"}
+                        </span>
+                        <span className="text-xs text-muted-foreground truncate">
+                          {user.email || ""}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <Button asChild variant="outline" className="w-full gap-2">
+                    <Link href="/dashboard">
+                      <UserIcon className="h-4 w-4" />
+                      Panel
+                    </Link>
+                  </Button>
                   <Button asChild variant="outline" className="w-full gap-2">
                     <Link href="/depositos">
                       <DollarSign className="h-4 w-4" />
