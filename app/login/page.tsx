@@ -10,9 +10,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Logo } from "@/components/logo"
 import { Eye, EyeOff, Mail, Lock, AlertCircle } from "lucide-react"
-import { isAdmin, setSessionUser, type User, initializeSampleUsers } from "@/lib/auth"
+import { isAdmin, setSessionUser, type User, initializeSampleUsers, loginWithSupabase } from "@/lib/auth"
 import { useToast } from "@/hooks/use-toast"
-import { OAuthButtons } from "@/components/oauth-buttons"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -66,7 +65,6 @@ export default function LoginPage() {
         id: "admin-001",
         email: email,
         name: "Administrador",
-        role: "admin",
         plan: "elite",
         balance: 0,
         createdAt: new Date(),
@@ -80,83 +78,17 @@ export default function LoginPage() {
       return
     }
 
-    // Verificar modo mantenimiento para usuarios
-    const adminConfigStr = localStorage.getItem("admin_config")
-    const adminConfig = adminConfigStr ? JSON.parse(adminConfigStr) : {}
-    const isMaintenanceMode = adminConfig.maintenanceMode === true
-    const allowedUsersInMaintenance = adminConfig.maintenanceAllowedUsers || []
+    // Login con Supabase para usuarios normales
+    const result = await loginWithSupabase(email, password)
 
-    // Verificar usuario normal (simulado)
-    const storedUsers = localStorage.getItem("cvvinvest_users")
-    console.log("📦 Usuarios almacenados:", storedUsers)
-    const users: User[] = storedUsers ? JSON.parse(storedUsers) : []
-    console.log("👥 Lista de usuarios:", users)
-    const user = users.find((u) => u.email === email)
-    console.log("🔍 Usuario encontrado:", user)
-
-    if (user) {
-      // Validar contraseña
-      const storedPasswords = localStorage.getItem("cvvinvest_passwords")
-      const passwords: Record<string, string> = storedPasswords ? JSON.parse(storedPasswords) : {}
-      console.log("🔑 Contraseñas disponibles:", Object.keys(passwords))
-      
-      if (passwords[email] !== password) {
-        console.log("❌ Contraseña incorrecta. Esperaba:", passwords[email], "Recibí:", password)
-        setError("Credenciales incorrectas. Verifica tu email y contraseña.")
-        setLoading(false)
-        return
-      }
-
-      console.log("✅ Contraseña correcta")
-
-      // Si hay mantenimiento y el usuario no está en la lista permitida
-      if (isMaintenanceMode && !allowedUsersInMaintenance.includes(email)) {
-        setError("La plataforma está en modo de mantenimiento. Por favor intenta más tarde.")
-        setLoading(false)
-        return
-      }
-
-      // Verificar si 2FA está habilitado para el usuario
-      const userSecurityKey = `user_security_${user.id}`
-      const userSecurityConfig = localStorage.getItem(userSecurityKey)
-      let user2FAEnabled = false
-      
-      if (userSecurityConfig) {
-        const config = JSON.parse(userSecurityConfig)
-        user2FAEnabled = config.twoFactorEnabled === true
-      }
-
-      if (user2FAEnabled && !showTwoFactor) {
-        // Mostrar pantalla de 2FA
-        setShowTwoFactor(true)
-        setLoading(false)
-        return
-      }
-
-      // Si 2FA está habilitado para usuario, verificar PIN
-      if (user2FAEnabled && showTwoFactor) {
-        const userSecurityConfig = localStorage.getItem(userSecurityKey)
-        if (!userSecurityConfig) {
-          setError("Error al verificar 2FA")
-          setLoading(false)
-          return
-        }
-        const config = JSON.parse(userSecurityConfig)
-        if (twoFactorPin !== config.twoFactorPin) {
-          setError("PIN incorrecto")
-          setLoading(false)
-          return
-        }
-      }
-
-      setSessionUser(user)
+    if (result.success && result.user) {
       toast({
-        title: `¡Bienvenido, ${user.name}!`,
-        description: `Iniciaste sesión con: ${user.email} | Plan: ${user.plan.toUpperCase()}`,
+        title: `¡Bienvenido, ${result.user.name}!`,
+        description: `Iniciaste sesión con: ${result.user.email} | Plan: ${result.user.plan.toUpperCase()}`,
       })
       router.push("/dashboard")
     } else {
-      setError("Credenciales incorrectas. Verifica tu email y contraseña.")
+      setError(result.error || "Credenciales incorrectas. Verifica tu email y contraseña.")
     }
 
     setLoading(false)
@@ -295,12 +227,7 @@ export default function LoginPage() {
                   <div className="absolute inset-0 flex items-center">
                     <div className="w-full border-t border-border" />
                   </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">O continúa con</span>
-                  </div>
                 </div>
-
-                <OAuthButtons />
               </>
             )}
           </form>

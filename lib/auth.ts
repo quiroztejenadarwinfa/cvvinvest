@@ -1,3 +1,5 @@
+import { supabase } from "@/lib/supabase"
+
 // Configuración del administrador
 export const ADMIN_EMAIL = "exe.main.darwin@gmail.com"
 export const ADMIN_PASSWORD = "admin12345"
@@ -10,7 +12,7 @@ export interface User {
   id: string
   email: string
   name: string
-  role: UserRole
+  role?: UserRole
   plan: "gratuito" | "estandar" | "pro" | "vip" | "elite"
   balance: number
   createdAt: Date
@@ -36,17 +38,116 @@ export function isAdmin(email: string, password: string): boolean {
   return email === ADMIN_EMAIL && password === ADMIN_PASSWORD
 }
 
-// Función para obtener usuario de sesión (simulado - en producción usar JWT/cookies)
+// Función para obtener usuario de sesión (ahora intenta Supabase primero, luego localStorage)
 export function getSessionUser(): User | null {
   if (typeof window === "undefined") return null
+  
+  // Intentar obtener de localStorage primero (para compatibilidad)
   const userData = localStorage.getItem("cvvinvest_user")
-  if (!userData) return null
-  return JSON.parse(userData)
+  if (userData) {
+    return JSON.parse(userData)
+  }
+  
+  // Si no está en localStorage, la sesión de Supabase debe estar manejada en componentes
+  return null
 }
 
-// Función para guardar sesión
+// Función para guardar sesión en localStorage (para compatibilidad)
 export function setSessionUser(user: User): void {
   localStorage.setItem("cvvinvest_user", JSON.stringify(user))
+}
+
+// Función para login con Supabase
+export async function loginWithSupabase(email: string, password: string) {
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+    if (error) return { success: false, error: error.message, user: null }
+
+    // Obtener datos del usuario
+    const { data: userData, error: userError } = await supabase
+      .from("users")
+      .select("*")
+      .eq("id", data.user.id)
+      .single()
+
+    if (userError) return { success: false, error: userError.message, user: null }
+
+    const user: User = {
+      id: userData.id,
+      email: userData.email,
+      name: userData.name || "",
+      plan: userData.plan || "gratuito",
+      balance: userData.balance || 0,
+      createdAt: new Date(userData.created_at),
+    }
+
+    setSessionUser(user)
+    return { success: true, error: null, user }
+  } catch (error: any) {
+    return { success: false, error: error.message, user: null }
+  }
+}
+
+// Función para registro con Supabase
+export async function registerWithSupabase(
+  email: string,
+  password: string,
+  name: string
+) {
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { full_name: name },
+      },
+    })
+
+    if (error) return { success: false, error: error.message, user: null }
+
+    // Crear registro en tabla users
+    if (data.user) {
+      const { error: insertError } = await supabase.from("users").insert({
+        id: data.user.id,
+        email: data.user.email,
+        name: name,
+        plan: "gratuito",
+        balance: 0,
+        is_active: true,
+      })
+
+      if (insertError) return { success: false, error: insertError.message, user: null }
+    }
+
+    const user: User = {
+      id: data.user.id,
+      email: data.user.email || email,
+      name: name,
+      plan: "gratuito",
+      balance: 0,
+      createdAt: new Date(),
+    }
+
+    setSessionUser(user)
+    return { success: true, error: null, user }
+  } catch (error: any) {
+    return { success: false, error: error.message, user: null }
+  }
+}
+
+// Función para logout
+export async function logoutSupabase() {
+  try {
+    await supabase.auth.signOut()
+    localStorage.removeItem("cvvinvest_user")
+    return { success: true, error: null }
+  } catch (error: any) {
+    return { success: false, error: error.message }
+  }
 }
 
 // Función para cerrar sesión - Limpia TODOS los datos de la sesión anterior

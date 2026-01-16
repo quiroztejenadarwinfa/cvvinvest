@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Logo } from "@/components/logo"
 import { Eye, EyeOff, Mail, Lock, User, AlertCircle, Check } from "lucide-react"
-import { setSessionUser, generateId, type User as UserType } from "@/lib/auth"
+import { registerWithSupabase, type User as UserType } from "@/lib/auth"
 import { createAdminNotification } from "@/lib/notifications"
 import { useToast } from "@/hooks/use-toast"
 
@@ -49,60 +49,33 @@ export default function RegistroPage() {
       return
     }
 
-    // Simular delay de registro
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    // Registrar con Supabase
+    const result = await registerWithSupabase(email, password, name)
 
-    // Crear nuevo usuario
-    const newUser: UserType = {
-      id: generateId(),
-      email: email,
-      name: name,
-      role: "user",
-      plan: "gratuito",
-      balance: 0,
-      createdAt: new Date(),
+    if (result.success && result.user) {
+      // Crear notificación para el admin
+      createAdminNotification({
+        type: 'user_registered',
+        title: "Nuevo usuario registrado",
+        message: `${name} se ha registrado con el correo ${email}`,
+        details: {
+          userId: result.user.id,
+          userName: result.user.name,
+          userEmail: result.user.email,
+        },
+        read: false,
+      })
+
+      toast({
+        title: "¡Registro exitoso!",
+        description: `Bienvenido ${name}, tu cuenta ha sido creada correctamente.`,
+      })
+      router.push("/dashboard")
+    } else {
+      setError(result.error || "Error al registrar. Intenta nuevamente.")
     }
 
-    // Guardar en localStorage (simulando base de datos)
-    const storedUsers = localStorage.getItem("cvvinvest_users")
-    const users: UserType[] = storedUsers ? JSON.parse(storedUsers) : []
-
-    if (users.find((u) => u.email === email)) {
-      setError("Este correo ya está registrado")
-      setLoading(false)
-      return
-    }
-
-    users.push(newUser)
-    localStorage.setItem("cvvinvest_users", JSON.stringify(users))
-    
-    // Guardar contraseña en un almacenamiento separado (simulado)
-    const storedPasswords = localStorage.getItem("cvvinvest_passwords")
-    const passwords: Record<string, string> = storedPasswords ? JSON.parse(storedPasswords) : {}
-    passwords[email] = password
-    localStorage.setItem("cvvinvest_passwords", JSON.stringify(passwords))
-    
-    setSessionUser(newUser)
-
-    // Crear notificación para el admin
-    createAdminNotification({
-      type: 'user_registered',
-      title: "Nuevo usuario registrado",
-      message: `${name} se ha registrado con el correo ${email}`,
-      details: {
-        userId: newUser.id,
-        userName: newUser.name,
-        userEmail: newUser.email,
-      },
-      read: false,
-    })
-
-    toast({
-      title: "¡Cuenta creada exitosamente!",
-      description: "Bienvenido a CVVINVEST. ¡Comienza a invertir ahora!",
-    })
-
-    router.push("/dashboard")
+    setLoading(false)
   }
 
   return (
