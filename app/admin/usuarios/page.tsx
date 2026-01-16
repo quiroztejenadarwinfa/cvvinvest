@@ -70,23 +70,31 @@ export default function AdminUsuariosPage() {
       return
     }
     setAdmin(sessionUser)
+    
+    // Cargar usuarios inmediatamente
     loadUsers()
-    setLoading(false)
-
+    
     // Recargar usuarios cada 5 segundos (actualizaciones en tiempo real)
     const interval = setInterval(() => {
       loadUsers()
     }, 5000)
 
+    setLoading(false)
     return () => clearInterval(interval)
   }, [router])
 
   const loadUsers = async () => {
-    // Cargar SOLO de Supabase (sin fallback a localStorage)
-    const { users: dbUsers } = await getAllUsersFromDB()
-    
-    if (dbUsers && dbUsers.length > 0) {
-      setUsers(dbUsers)
+    try {
+      // Cargar SOLO de Supabase
+      const { users: dbUsers } = await getAllUsersFromDB()
+      
+      if (dbUsers && dbUsers.length > 0) {
+        setUsers(dbUsers)
+      } else {
+        setUsers([])
+      }
+    } catch (error) {
+      console.error('Error loading users:', error)
     }
   }
 
