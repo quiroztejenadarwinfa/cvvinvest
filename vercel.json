@@ -1,0 +1,9 @@
+{
+  "env": {
+    "MONGODB_URI": "@mongodb_uri",
+    "NEXT_PUBLIC_API_URL": "@api_url"
+  },
+  "buildCommand": "pnpm build",
+  "framework": "nextjs",
+  "nodeVersion": "20.x"
+}

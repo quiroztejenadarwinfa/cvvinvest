@@ -1,0 +1,174 @@
+{
+  "nav": {
+    "home": "Inicio",
+    "planes": "Planes",
+    "nosotros": "Nosotros",
+    "contacto": "Contacto",
+    "dashboard": "Panel",
+    "admin": "Administración",
+    "login": "Iniciar sesión",
+    "logout": "Cerrar sesión",
+    "perfil": "Perfil"
+  },
+  "home": {
+    "title": "Plataforma de Inversión Financiera",
+    "subtitle": "Invierte inteligentemente y crece con nosotros",
+    "cta": "Comenzar ahora"
+  },
+  "planes": {
+    "title": "Nuestros Planes de Inversión",
+    "subtitle": "Elige el plan que mejor se adapte a tus necesidades",
+    "selectPlan": "Seleccionar Plan"
+  },
+  "inversiones": {
+    "title": "Mis Inversiones",
+    "subtitle": "Gestiona y monitorea todas tus inversiones",
+    "stats": {
+      "totalInvested": "Total Invertido",
+      "pending": "En Revisión",
+      "approved": "Aprobadas",
+      "totalRequests": "Total de Solicitudes",
+      "requireApproval": "Requieren aprobación",
+      "activeInvestments": "Inversiones activas",
+      "allInvestments": "Todas las inversiones",
+      "investedCapital": "Capital invertido"
+    },
+    "filters": {
+      "title": "Filtros Avanzados",
+      "search": "Buscar",
+      "searchPlaceholder": "Plan o ID...",
+      "status": "Estado",
+      "amountRange": "Rango de Monto",
+      "sortBy": "Ordenar por",
+      "allStatuses": "Todos los estados",
+      "allAmounts": "Todos los montos",
+      "recent": "Más reciente",
+      "oldest": "Más antiguo",
+      "highestAmount": "Mayor monto",
+      "lowestAmount": "Menor monto",
+      "under1000": "Menor a $1,000",
+      "1000to5000": "$1,000 - $5,000",
+      "over5000": "Mayor a $5,000",
+      "active": "activos",
+      "clear": "Limpiar"
+    },
+    "status": {
+      "pending": "⏳ Pendiente",
+      "approved": "✅ Aprobado",
+      "rejected": "❌ Rechazado",
+      "inReview": "En Revisión",
+      "requests": "Solicitudes"
+    },
+    "labels": {
+      "amount": "Monto",
+      "allowedRange": "Rango Permitido",
+      "requested": "Solicitado",
+      "id": "ID",
+      "approvedOn": "Aprobado el",
+      "adminNote": "📝 Nota del Administrador",
+      "sentHoursAgo": "Solicitud enviada hace",
+      "hoursAgo": "horas",
+      "daysAgo": "días",
+      "noInvestments": "📊 Aún no tienes inversiones. Ve a Planes para crear tu primera inversión.",
+      "noMatching": "🔍 No hay inversiones que coincidan con los filtros seleccionados.",
+      "showing": "Mostrando",
+      "of": "de"
+    }
+  },
+  "admin": {
+    "inversiones": {
+      "title": "Gestión de Inversiones",
+      "subtitle": "Revisa y aprueba las solicitudes de inversión de los usuarios",
+      "stats": {
+        "inReview": "En Revisión",
+        "totalApproved": "Total Aprobado",
+        "approved": "Aprobadas",
+        "total": "Total de Solicitudes"
+      },
+      "filters": {
+        "title": "Filtros Avanzados",
+        "searchUser": "Buscar Usuario o Email",
+        "searchPlaceholder": "Nombre, email o ID...",
+        "status": "Estado",
+        "minAmount": "Monto Mínimo",
+        "maxAmount": "Monto Máximo",
+        "from": "Desde",
+        "to": "Hasta",
+        "autoRefresh": "Auto-Actualizar",
+        "manualRefresh": "Actualizar Manual"
+      },
+      "columns": {
+        "user": "Usuario",
+        "email": "Email",
+        "plan": "Plan",
+        "amount": "Monto",
+        "range": "Rango",
+        "status": "Estado",
+        "date": "Fecha",
+        "actions": "Acciones"
+      },
+      "actions": {
+        "approve": "Aprobar",
+        "reject": "Rechazar",
+        "cancel": "Cancelar",
+        "noAction": "Sin acción disponible",
+        "completed": "✓ Completada",
+        "rejectedStatus": "✗ Rechazada"
+      },
+      "modal": {
+        "approve": "Aprobar Inversión",
+        "reject": "Rechazar Inversión",
+        "cancel": "Cancelar Inversión",
+        "notes": "Notas (opcional)",
+        "notesPlaceholder": "Añade notas sobre esta decisión...",
+        "changePlan": "Cambiar plan del usuario al aprobar",
+        "selectPlan": "Seleccionar nuevo plan"
+      },
+      "labels": {
+        "plan": "Plan",
+        "amount": "Monto",
+        "range": "Rango",
+        "requested": "Solicitado",
+        "notes": "Notas",
+        "noInvestments": "📊 No hay inversiones para mostrar con los filtros seleccionados."
+      }
+    }
+  },
+  "auth": {
+    "login": "Iniciar sesión",
+    "logout": "Cerrar sesión",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "signIn": "Ingresar",
+    "signUp": "Registrarse",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "or": "o",
+    "continueWith": "O continúa con",
+    "signInWithGoogle": "Inicia sesión con Google",
+    "signInWithMicrosoft": "Inicia sesión con Microsoft",
+    "noAccount": "¿No tienes cuenta?",
+    "haveAccount": "¿Ya tienes cuenta?",
+    "twoFA": "Autenticación de Dos Factores",
+    "enterPin": "Ingresa tu PIN de 6 dígitos",
+    "pin": "PIN",
+    "verify": "Verificar",
+    "invalidPin": "PIN inválido",
+    "twoFADescription": "Ingresa el código de 6 dígitos que configuraste"
+  },
+  "common": {
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "Éxito",
+    "warning": "Advertencia",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "save": "Guardar",
+    "close": "Cerrar",
+    "confirm": "Confirmar",
+    "next": "Siguiente",
+    "back": "Atrás",
+    "noData": "Sin datos",
+    "required": "Requerido"
+  }
+}

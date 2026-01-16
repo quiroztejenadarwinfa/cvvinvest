@@ -1,0 +1,174 @@
+{
+  "nav": {
+    "home": "Home",
+    "planes": "Plans",
+    "nosotros": "About Us",
+    "contacto": "Contact",
+    "dashboard": "Dashboard",
+    "admin": "Administration",
+    "login": "Sign In",
+    "logout": "Sign Out",
+    "perfil": "Profile"
+  },
+  "home": {
+    "title": "Financial Investment Platform",
+    "subtitle": "Invest intelligently and grow with us",
+    "cta": "Get Started Now"
+  },
+  "planes": {
+    "title": "Our Investment Plans",
+    "subtitle": "Choose the plan that best fits your needs",
+    "selectPlan": "Select Plan"
+  },
+  "inversiones": {
+    "title": "My Investments",
+    "subtitle": "Manage and monitor all your investments",
+    "stats": {
+      "totalInvested": "Total Invested",
+      "pending": "Under Review",
+      "approved": "Approved",
+      "totalRequests": "Total Requests",
+      "requireApproval": "Require approval",
+      "activeInvestments": "Active investments",
+      "allInvestments": "All investments",
+      "investedCapital": "Invested capital"
+    },
+    "filters": {
+      "title": "Advanced Filters",
+      "search": "Search",
+      "searchPlaceholder": "Plan or ID...",
+      "status": "Status",
+      "amountRange": "Amount Range",
+      "sortBy": "Sort By",
+      "allStatuses": "All statuses",
+      "allAmounts": "All amounts",
+      "recent": "Most recent",
+      "oldest": "Oldest",
+      "highestAmount": "Highest amount",
+      "lowestAmount": "Lowest amount",
+      "under1000": "Less than $1,000",
+      "1000to5000": "$1,000 - $5,000",
+      "over5000": "More than $5,000",
+      "active": "active",
+      "clear": "Clear"
+    },
+    "status": {
+      "pending": "⏳ Pending",
+      "approved": "✅ Approved",
+      "rejected": "❌ Rejected",
+      "inReview": "Under Review",
+      "requests": "Requests"
+    },
+    "labels": {
+      "amount": "Amount",
+      "allowedRange": "Allowed Range",
+      "requested": "Requested",
+      "id": "ID",
+      "approvedOn": "Approved on",
+      "adminNote": "📝 Admin Note",
+      "sentHoursAgo": "Request sent",
+      "hoursAgo": "hours ago",
+      "daysAgo": "days ago",
+      "noInvestments": "📊 You don't have any investments yet. Go to Plans to create your first investment.",
+      "noMatching": "🔍 No investments match the selected filters.",
+      "showing": "Showing",
+      "of": "of"
+    }
+  },
+  "admin": {
+    "inversiones": {
+      "title": "Investment Management",
+      "subtitle": "Review and approve user investment requests",
+      "stats": {
+        "inReview": "Under Review",
+        "totalApproved": "Total Approved",
+        "approved": "Approved",
+        "total": "Total Requests"
+      },
+      "filters": {
+        "title": "Advanced Filters",
+        "searchUser": "Search User or Email",
+        "searchPlaceholder": "Name, email or ID...",
+        "status": "Status",
+        "minAmount": "Minimum Amount",
+        "maxAmount": "Maximum Amount",
+        "from": "From",
+        "to": "To",
+        "autoRefresh": "Auto-Refresh",
+        "manualRefresh": "Manual Refresh"
+      },
+      "columns": {
+        "user": "User",
+        "email": "Email",
+        "plan": "Plan",
+        "amount": "Amount",
+        "range": "Range",
+        "status": "Status",
+        "date": "Date",
+        "actions": "Actions"
+      },
+      "actions": {
+        "approve": "Approve",
+        "reject": "Reject",
+        "cancel": "Cancel",
+        "noAction": "No action available",
+        "completed": "✓ Completed",
+        "rejectedStatus": "✗ Rejected"
+      },
+      "modal": {
+        "approve": "Approve Investment",
+        "reject": "Reject Investment",
+        "cancel": "Cancel Investment",
+        "notes": "Notes (optional)",
+        "notesPlaceholder": "Add notes about this decision...",
+        "changePlan": "Change user plan when approving",
+        "selectPlan": "Select new plan"
+      },
+      "labels": {
+        "plan": "Plan",
+        "amount": "Amount",
+        "range": "Range",
+        "requested": "Requested",
+        "notes": "Notes",
+        "noInvestments": "📊 No investments to display with the selected filters."
+      }
+    }
+  },
+  "auth": {
+    "login": "Sign In",
+    "logout": "Sign Out",
+    "email": "Email",
+    "password": "Password",
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "forgotPassword": "Forgot your password?",
+    "or": "or",
+    "continueWith": "Or continue with",
+    "signInWithGoogle": "Sign in with Google",
+    "signInWithMicrosoft": "Sign in with Microsoft",
+    "noAccount": "Don't have an account?",
+    "haveAccount": "Already have an account?",
+    "twoFA": "Two-Factor Authentication",
+    "enterPin": "Enter your 6-digit PIN",
+    "pin": "PIN",
+    "verify": "Verify",
+    "invalidPin": "Invalid PIN",
+    "twoFADescription": "Enter the 6-digit code you configured"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "warning": "Warning",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "save": "Save",
+    "close": "Close",
+    "confirm": "Confirm",
+    "next": "Next",
+    "back": "Back",
+    "noData": "No data",
+    "required": "Required"
+  }
+}
