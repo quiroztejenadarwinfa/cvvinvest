@@ -42,7 +42,7 @@ const allMenuItems: MenuItem[] = [
   { href: "/dashboard/informes", icon: BarChart3, label: "Informes", feature: "canViewReports" },
   { href: "/dashboard/analytics", icon: TrendingUp, label: "Analytics", feature: "canViewAnalytics" },
   { href: "/dashboard/historial", icon: History, label: "Historial", feature: "canInvest" },
-  { href: "/dashboard/seguridad", icon: Shield, label: "Seguridad" },
+  // Nota: Seguridad solo aparece para admin
   { href: "/dashboard/ajustes", icon: Settings, label: "Ajustes" },
 ]
 
