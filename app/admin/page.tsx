@@ -18,9 +18,11 @@ export default function AdminPage() {
       router.push("/login")
       return
     }
-    // Verificar que es admin
-    if (sessionUser.email !== ADMIN_EMAIL || sessionUser.role !== "admin") {
-      router.push("/dashboard")
+    // Verificar que es admin - SOLO admin email puede acceder
+    if (sessionUser.email !== ADMIN_EMAIL) {
+      // Si no es admin, redirigir y limpiar sesión
+      clearSession()
+      router.push("/login")
       return
     }
     setAdmin(sessionUser)
