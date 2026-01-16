@@ -6,12 +6,13 @@ import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Zap, CheckCircle, ArrowUpRight, AlertCircle, XCircle, MessageCircle } from 'lucide-react'
+import { Zap, CheckCircle, ArrowUpRight, AlertCircle, XCircle, MessageCircle, Copy, DollarSign } from 'lucide-react'
 import { getSessionUser, createDeposit, getUserDeposits } from '@/lib/auth'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { canAccessFeature, getPlanFeatures } from '@/lib/plan-features'
 import { createUserNotification, createAdminNotification } from '@/lib/notifications'
 import { PaymentButton } from '@/components/payment-button'
+import { getActiveBankAccounts } from '@/lib/bank-config'
 import Link from 'next/link'
 
 export default function DepositosPage() {
@@ -23,6 +24,9 @@ export default function DepositosPage() {
   const [isPaymentConfirmed, setIsPaymentConfirmed] = useState(false)
   const [currentDepositId, setCurrentDepositId] = useState<string | null>(null)
   const [lastDepositStatus, setLastDepositStatus] = useState<{id: string; status: string; message: string} | null>(null)
+  const [selectedMethod, setSelectedMethod] = useState<"paypal" | "transfer">("paypal")
+  const [bankAccounts] = useState(getActiveBankAccounts())
+  const [copiedAccount, setCopiedAccount] = useState<string | null>(null)
   const amount = parseFloat(depositAmount) || 0
 
   useEffect(() => {
@@ -138,6 +142,60 @@ export default function DepositosPage() {
       // Redirigir a PayPal
       window.location.href = "https://www.paypal.com/ncp/payment/F65DBX6HAEPTU"
     }
+  }
+
+  const handleBankTransfer = () => {
+    if (user && amount > 0) {
+      // Crear depósito por transferencia bancaria
+      const depositId = `dep_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      const newDeposit = {
+        id: depositId,
+        userId: user.id,
+        amount: amount,
+        method: "Transferencia Bancaria",
+        status: "pendiente",
+        createdAt: new Date().toISOString(),
+        notes: "Esperando confirmación de transferencia",
+        userName: user.name || user.email,
+        userEmail: user.email
+      }
+      
+      // Guardar depósito
+      const allDeposits = JSON.parse(localStorage.getItem('cvvinvest_deposits') || '[]')
+      localStorage.setItem('cvvinvest_deposits', JSON.stringify([newDeposit, ...allDeposits]))
+      
+      // Enviar notificación al admin
+      createAdminNotification({
+        type: "deposit_pending",
+        title: "Nuevo Depósito Pendiente - Transferencia Bancaria",
+        message: `${user.email} ha iniciado un depósito de $${amount.toFixed(2)} vía Transferencia Bancaria (EC)`,
+        data: {
+          userId: user.id,
+          depositId: depositId,
+          amount: amount,
+          method: "Transferencia Bancaria",
+          userEmail: user.email
+        }
+      })
+      
+      setCurrentDepositId(depositId)
+      setDepositAmount("")
+      
+      // Mostrar mensaje de éxito
+      setLastDepositStatus({
+        id: depositId,
+        status: "pendiente",
+        message: "✓ Depósito registrado. Por favor realiza la transferencia a la cuenta indicada."
+      })
+      
+      setTimeout(() => setLastDepositStatus(null), 8000)
+    }
+  }
+
+  const handleCopyAccount = (text: string, accountId: string) => {
+    navigator.clipboard.writeText(text)
+    setCopiedAccount(accountId)
+    setTimeout(() => setCopiedAccount(null), 2000)
   }
 
   if (loading) {
@@ -261,6 +319,30 @@ export default function DepositosPage() {
                 <div className="p-8">
                   <h2 className="text-2xl font-bold mb-6">Nuevo Depósito</h2>
 
+                  {/* Method Tabs */}
+                  <div className="flex gap-2 mb-6 border-b">
+                    <button
+                      onClick={() => setSelectedMethod("paypal")}
+                      className={`px-4 py-2 font-medium transition-colors ${
+                        selectedMethod === "paypal"
+                          ? "border-b-2 border-primary text-primary"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      PayPal
+                    </button>
+                    <button
+                      onClick={() => setSelectedMethod("transfer")}
+                      className={`px-4 py-2 font-medium transition-colors ${
+                        selectedMethod === "transfer"
+                          ? "border-b-2 border-primary text-primary"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      Transferencia Bancaria (EC)
+                    </button>
+                  </div>
+
                   {/* Amount Input */}
                   <div className="mb-6">
                     <label className="text-sm font-medium mb-2 block">Monto a Depositar (USD)</label>
@@ -283,45 +365,179 @@ export default function DepositosPage() {
                     )}
                   </div>
 
-                  {/* Buttons */}
-                  {amount > 0 ? (
+                  {/* PayPal Method */}
+                  {selectedMethod === "paypal" && (
                     <div className="space-y-3">
-                      <PaymentButton
-                        amount={amount.toFixed(2)}
-                        currency="$"
-                        onPayment={handlePayPalClick}
-                        isConfirmed={isPaymentConfirmed}
-                        className="w-full"
-                      />
-                      <Button
-                        asChild
-                        variant="outline"
-                        className="w-full border-2 border-primary/30 hover:bg-primary/5"
-                      >
-                        <Link href="/chat?source=depositos&autoMessage=true">
-                          <MessageCircle className="h-4 w-4 mr-2" />
-                          Depositar a través de Asistente
-                        </Link>
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="p-4 bg-muted rounded-lg text-center">
-                      <p className="text-sm text-muted-foreground">Ingresa un monto para continuar</p>
+                      {amount > 0 ? (
+                        <>
+                          <PaymentButton
+                            amount={amount.toFixed(2)}
+                            currency="$"
+                            onPayment={handlePayPalClick}
+                            isConfirmed={isPaymentConfirmed}
+                            className="w-full"
+                          />
+                          <Button
+                            asChild
+                            variant="outline"
+                            className="w-full border-2 border-primary/30 hover:bg-primary/5"
+                          >
+                            <Link href="/chat?source=depositos&autoMessage=true">
+                              <MessageCircle className="h-4 w-4 mr-2" />
+                              Depositar a través de Asistente
+                            </Link>
+                          </Button>
+                        </>
+                      ) : (
+                        <div className="p-4 bg-muted rounded-lg text-center">
+                          <p className="text-sm text-muted-foreground">Ingresa un monto para continuar</p>
+                        </div>
+                      )}
+                      <p className="text-xs text-center text-muted-foreground mt-3">
+                        Serás redirigido a PayPal para completar el pago
+                      </p>
                     </div>
                   )}
 
-                  <p className="text-xs text-center text-muted-foreground mt-3">
-                    Serás redirigido a PayPal para completar el pago
-                  </p>
+                  {/* Bank Transfer Method */}
+                  {selectedMethod === "transfer" && (
+                    <div className="space-y-4">
+                      {bankAccounts.length > 0 ? (
+                        <>
+                          {bankAccounts.map((account) => (
+                            <div key={account.id} className="border-2 border-primary/30 rounded-lg p-4 bg-background/50">
+                              <div className="flex items-start justify-between mb-4">
+                                <div>
+                                  <h3 className="font-semibold text-primary">{account.bankName}</h3>
+                                  <p className="text-sm text-muted-foreground">{account.accountType}</p>
+                                </div>
+                              </div>
+
+                              <div className="space-y-3">
+                                {/* Titular */}
+                                <div>
+                                  <p className="text-xs text-muted-foreground mb-1">Titular de la Cuenta</p>
+                                  <div className="flex items-center justify-between bg-muted/50 p-2 rounded">
+                                    <code className="text-sm font-mono">{account.accountHolder}</code>
+                                    <button
+                                      onClick={() => handleCopyAccount(account.accountHolder, `holder-${account.id}`)}
+                                      className="text-primary hover:text-primary/80 transition-colors"
+                                      title="Copiar"
+                                    >
+                                      <Copy className="h-4 w-4" />
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {/* Número de Cuenta */}
+                                <div>
+                                  <p className="text-xs text-muted-foreground mb-1">Número de Cuenta</p>
+                                  <div className="flex items-center justify-between bg-muted/50 p-2 rounded">
+                                    <code className="text-sm font-mono font-bold">{account.accountNumber}</code>
+                                    <button
+                                      onClick={() => handleCopyAccount(account.accountNumber, `account-${account.id}`)}
+                                      className="text-primary hover:text-primary/80 transition-colors"
+                                      title="Copiar"
+                                    >
+                                      <Copy className="h-4 w-4" />
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {/* Cédula */}
+                                <div>
+                                  <p className="text-xs text-muted-foreground mb-1">Cédula/RUC</p>
+                                  <div className="flex items-center justify-between bg-muted/50 p-2 rounded">
+                                    <code className="text-sm font-mono">{account.ci}</code>
+                                    <button
+                                      onClick={() => handleCopyAccount(account.ci, `ci-${account.id}`)}
+                                      className="text-primary hover:text-primary/80 transition-colors"
+                                      title="Copiar"
+                                    >
+                                      <Copy className="h-4 w-4" />
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {/* SWIFT */}
+                                {account.swift && (
+                                  <div>
+                                    <p className="text-xs text-muted-foreground mb-1">Código SWIFT</p>
+                                    <div className="flex items-center justify-between bg-muted/50 p-2 rounded">
+                                      <code className="text-sm font-mono">{account.swift}</code>
+                                      <button
+                                        onClick={() => handleCopyAccount(account.swift, `swift-${account.id}`)}
+                                        className="text-primary hover:text-primary/80 transition-colors"
+                                        title="Copiar"
+                                      >
+                                        <Copy className="h-4 w-4" />
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Email Soporte */}
+                                <div>
+                                  <p className="text-xs text-muted-foreground mb-1">Email de Soporte</p>
+                                  <div className="flex items-center justify-between bg-muted/50 p-2 rounded">
+                                    <code className="text-sm font-mono">{account.email}</code>
+                                    <button
+                                      onClick={() => handleCopyAccount(account.email, `email-${account.id}`)}
+                                      className="text-primary hover:text-primary/80 transition-colors"
+                                      title="Copiar"
+                                    >
+                                      <Copy className="h-4 w-4" />
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+
+                          {/* Instructions */}
+                          <Alert className="border-blue-500/50 bg-blue-500/10">
+                            <AlertCircle className="h-4 w-4 text-blue-500" />
+                            <AlertDescription className="text-blue-700">
+                              <p className="font-semibold mb-2">Instrucciones:</p>
+                              <ol className="text-sm space-y-1 list-decimal list-inside">
+                                <li>Copia los datos de la cuenta bancaria</li>
+                                <li>Realiza una transferencia desde tu banco</li>
+                                <li>Usa tu email como referencia de la transferencia</li>
+                                <li>Nosotros confirmaremos en las próximas 24 horas</li>
+                              </ol>
+                            </AlertDescription>
+                          </Alert>
+
+                          {/* Confirm Button */}
+                          {amount > 0 && (
+                            <Button
+                              onClick={handleBankTransfer}
+                              className="w-full bg-primary hover:bg-primary/90 text-lg py-6"
+                            >
+                              <DollarSign className="h-5 w-5 mr-2" />
+                              Confirmar Depósito de ${amount.toFixed(2)}
+                            </Button>
+                          )}
+                        </>
+                      ) : (
+                        <Alert className="border-yellow-500/50 bg-yellow-500/10">
+                          <AlertCircle className="h-4 w-4 text-yellow-600" />
+                          <AlertDescription className="text-yellow-700">
+                            No hay cuentas bancarias disponibles en este momento.
+                          </AlertDescription>
+                        </Alert>
+                      )}
+                    </div>
+                  )}
 
                   <div className="space-y-2 text-xs text-muted-foreground mt-6 pt-6 border-t">
                     <div className="flex items-center gap-2">
                       <Zap className="w-4 h-4 text-green-500" />
-                      <span>Depósito instantáneo</span>
+                      <span>Múltiples métodos de pago</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Zap className="w-4 h-4 text-green-500" />
-                      <span>Sin comisiones adicionales</span>
+                      <span>Sin comisiones en transferencias</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Zap className="w-4 h-4 text-green-500" />
