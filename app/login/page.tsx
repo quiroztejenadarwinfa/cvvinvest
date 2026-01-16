@@ -65,6 +65,7 @@ export default function LoginPage() {
         id: "admin-001",
         email: email,
         name: "Administrador",
+        role: "admin",
         plan: "elite",
         balance: 0,
         createdAt: new Date(),
