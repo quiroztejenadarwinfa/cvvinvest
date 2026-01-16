@@ -2,18 +2,22 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { clearSession, resetAllData } from "@/lib/auth"
+import { clearSession, resetAllData, ADMIN_EMAIL } from "@/lib/auth"
+import { resetAllUserDataSupabase } from "@/lib/auth-supabase"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { AlertCircle, ArrowLeft } from "lucide-react"
 import Link from "next/link"
+import { useToast } from "@/hooks/use-toast"
 
 export default function ResetPage() {
   const router = useRouter()
+  const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   const [confirmed, setConfirmed] = useState(false)
   const [confirmText, setConfirmText] = useState("")
   const [success, setSuccess] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleReset = async () => {
     if (!confirmed) {
@@ -26,15 +30,37 @@ export default function ResetPage() {
     }
 
     setLoading(true)
+    setError(null)
     try {
+      // Resetear datos en Supabase
+      const { success: supabaseSuccess, error: supabaseError } = await resetAllUserDataSupabase(ADMIN_EMAIL)
+      
+      if (!supabaseSuccess) {
+        throw new Error(supabaseError || "Error al resetear datos de Supabase")
+      }
+
+      // Resetear datos en localStorage
       resetAllData()
       clearSession()
+      
       setSuccess(true)
+      toast({
+        title: "Reset Completado",
+        description: "Todos los datos de usuarios han sido eliminados (excepto admin)",
+      })
+      
       await new Promise((resolve) => setTimeout(resolve, 2000))
       router.push("/login")
-    } catch (error) {
-      console.error("Error al resetear:", error)
+    } catch (err: any) {
+      console.error("Error al resetear:", err)
+      setError(err.message || "Error desconocido al resetear")
       setLoading(false)
+      
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive",
+      })
     }
   }
 
@@ -82,6 +108,13 @@ export default function ResetPage() {
               <li>• NO PUEDE SER REVERTIDO</li>
             </ul>
           </div>
+
+          {/* Mostrar errores */}
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+              <p className="text-sm text-red-400">{error}</p>
+            </div>
+          )}
 
           {/* Confirmación inicial */}
           {!confirmed ? (

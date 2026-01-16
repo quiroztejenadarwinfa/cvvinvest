@@ -237,6 +237,47 @@ export async function deactivateUser(userId: string) {
   }
 }
 
+// Reset all user data (except admin) - Supabase
+export async function resetAllUserDataSupabase(adminEmail: string) {
+  try {
+    // 1. Eliminar todos los usuarios EXCEPTO admin
+    const { data: allUsers } = await supabase
+      .from("users")
+      .select("id, email")
+
+    if (allUsers) {
+      for (const user of allUsers) {
+        if (user.email !== adminEmail) {
+          // Eliminar usuario de tabla users
+          await supabase
+            .from("users")
+            .delete()
+            .eq("id", user.id)
+        }
+      }
+    }
+
+    // 2. Limpiar depósitos
+    await supabase.from("deposits").delete().neq("id", "")
+
+    // 3. Limpiar inversiones
+    await supabase.from("investments").delete().neq("id", "")
+
+    // 4. Limpiar sesiones de chat
+    await supabase.from("chat_sessions").delete().neq("id", "")
+
+    // 5. Limpiar mensajes de chat
+    await supabase.from("chat_messages").delete().neq("id", "")
+
+    // 6. Limpiar notificaciones
+    await supabase.from("notifications").delete().neq("id", "")
+
+    return { success: true, error: null }
+  } catch (error: any) {
+    return { success: false, error: error.message }
+  }
+}
+
 // Listen to auth changes
 export function onAuthStateChanged(
   callback: (user: User | null) => void
