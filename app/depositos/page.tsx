@@ -402,130 +402,28 @@ export default function DepositosPage() {
                   {/* Bank Transfer Method */}
                   {selectedMethod === "transfer" && (
                     <div className="space-y-4">
-                      {bankAccounts.length > 0 ? (
-                        <>
-                          {bankAccounts.map((account) => (
-                            <div key={account.id} className="border-2 border-primary/30 rounded-lg p-4 bg-background/50">
-                              <div className="flex items-start justify-between mb-4">
-                                <div>
-                                  <h3 className="font-semibold text-primary">{account.bankName}</h3>
-                                  <p className="text-sm text-muted-foreground">{account.accountType}</p>
-                                </div>
-                              </div>
-
-                              <div className="space-y-3">
-                                {/* Titular */}
-                                <div>
-                                  <p className="text-xs text-muted-foreground mb-1">Titular de la Cuenta</p>
-                                  <div className="flex items-center justify-between bg-muted/50 p-2 rounded">
-                                    <code className="text-sm font-mono">{account.accountHolder}</code>
-                                    <button
-                                      onClick={() => handleCopyAccount(account.accountHolder, `holder-${account.id}`)}
-                                      className="text-primary hover:text-primary/80 transition-colors"
-                                      title="Copiar"
-                                    >
-                                      <Copy className="h-4 w-4" />
-                                    </button>
-                                  </div>
-                                </div>
-
-                                {/* Número de Cuenta */}
-                                <div>
-                                  <p className="text-xs text-muted-foreground mb-1">Número de Cuenta</p>
-                                  <div className="flex items-center justify-between bg-muted/50 p-2 rounded">
-                                    <code className="text-sm font-mono font-bold">{account.accountNumber}</code>
-                                    <button
-                                      onClick={() => handleCopyAccount(account.accountNumber, `account-${account.id}`)}
-                                      className="text-primary hover:text-primary/80 transition-colors"
-                                      title="Copiar"
-                                    >
-                                      <Copy className="h-4 w-4" />
-                                    </button>
-                                  </div>
-                                </div>
-
-                                {/* Cédula */}
-                                <div>
-                                  <p className="text-xs text-muted-foreground mb-1">Cédula/RUC</p>
-                                  <div className="flex items-center justify-between bg-muted/50 p-2 rounded">
-                                    <code className="text-sm font-mono">{account.ci}</code>
-                                    <button
-                                      onClick={() => handleCopyAccount(account.ci, `ci-${account.id}`)}
-                                      className="text-primary hover:text-primary/80 transition-colors"
-                                      title="Copiar"
-                                    >
-                                      <Copy className="h-4 w-4" />
-                                    </button>
-                                  </div>
-                                </div>
-
-                                {/* SWIFT */}
-                                {account.swift && (
-                                  <div>
-                                    <p className="text-xs text-muted-foreground mb-1">Código SWIFT</p>
-                                    <div className="flex items-center justify-between bg-muted/50 p-2 rounded">
-                                      <code className="text-sm font-mono">{account.swift}</code>
-                                      <button
-                                        onClick={() => handleCopyAccount(account.swift, `swift-${account.id}`)}
-                                        className="text-primary hover:text-primary/80 transition-colors"
-                                        title="Copiar"
-                                      >
-                                        <Copy className="h-4 w-4" />
-                                      </button>
-                                    </div>
-                                  </div>
-                                )}
-
-                                {/* Email Soporte */}
-                                <div>
-                                  <p className="text-xs text-muted-foreground mb-1">Email de Soporte</p>
-                                  <div className="flex items-center justify-between bg-muted/50 p-2 rounded">
-                                    <code className="text-sm font-mono">{account.email}</code>
-                                    <button
-                                      onClick={() => handleCopyAccount(account.email, `email-${account.id}`)}
-                                      className="text-primary hover:text-primary/80 transition-colors"
-                                      title="Copiar"
-                                    >
-                                      <Copy className="h-4 w-4" />
-                                    </button>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-
-                          {/* Instructions */}
-                          <Alert className="border-blue-500/50 bg-blue-500/10">
+                      {amount > 0 ? (
+                        <div>
+                          <Alert className="border-blue-500/50 bg-blue-500/10 mb-4">
                             <AlertCircle className="h-4 w-4 text-blue-500" />
                             <AlertDescription className="text-blue-700">
-                              <p className="font-semibold mb-2">Instrucciones:</p>
-                              <ol className="text-sm space-y-1 list-decimal list-inside">
-                                <li>Copia los datos de la cuenta bancaria</li>
-                                <li>Realiza una transferencia desde tu banco</li>
-                                <li>Usa tu email como referencia de la transferencia</li>
-                                <li>Nosotros confirmaremos en las próximas 24 horas</li>
-                              </ol>
+                              <p className="font-semibold mb-2">Próximo paso:</p>
+                              <p className="text-sm">Haz clic en el botón "Pagar" para acceder a la información de la cuenta bancaria y enviar tu comprobante.</p>
                             </AlertDescription>
                           </Alert>
-
-                          {/* Confirm Button */}
-                          {amount > 0 && (
-                            <Button
-                              onClick={handleBankTransfer}
-                              className="w-full bg-primary hover:bg-primary/90 text-lg py-6"
-                            >
-                              <DollarSign className="h-5 w-5 mr-2" />
-                              Confirmar Depósito de ${amount.toFixed(2)}
-                            </Button>
-                          )}
-                        </>
+                          
+                          <Button
+                            onClick={() => router.push(`/depositos/transferencia?amount=${amount}`)}
+                            className="w-full bg-primary hover:bg-primary/90 text-lg py-6"
+                          >
+                            <DollarSign className="h-5 w-5 mr-2" />
+                            Pagar ${amount.toFixed(2)}
+                          </Button>
+                        </div>
                       ) : (
-                        <Alert className="border-yellow-500/50 bg-yellow-500/10">
-                          <AlertCircle className="h-4 w-4 text-yellow-600" />
-                          <AlertDescription className="text-yellow-700">
-                            No hay cuentas bancarias disponibles en este momento.
-                          </AlertDescription>
-                        </Alert>
+                        <div className="p-4 bg-muted rounded-lg text-center">
+                          <p className="text-sm text-muted-foreground">Ingresa un monto para continuar</p>
+                        </div>
                       )}
                     </div>
                   )}
