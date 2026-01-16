@@ -193,10 +193,32 @@ export async function getAllUsersFromDB() {
       .select("*")
       .order("created_at", { ascending: false })
 
-    if (error) throw error
+    if (error) {
+      console.error("Supabase error loading users:", error)
+      throw error
+    }
 
-    return { users: (data || []) as User[], error: null }
+    const users = (data || []) as User[]
+    console.log(`✓ Loaded ${users.length} users from Supabase`)
+    
+    return { users, error: null }
   } catch (error: any) {
+    console.error("Error in getAllUsersFromDB:", error.message)
+    
+    // Fallback to localStorage for testing
+    try {
+      if (typeof window !== "undefined") {
+        const localUsers = localStorage.getItem("cvvinvest_users")
+        if (localUsers) {
+          const users = JSON.parse(localUsers) as User[]
+          console.log(`⚠️ Using ${users.length} users from localStorage (Supabase unavailable)`)
+          return { users, error: null }
+        }
+      }
+    } catch (fallbackError) {
+      console.error("Fallback to localStorage also failed:", fallbackError)
+    }
+    
     return { users: [], error: error.message }
   }
 }
