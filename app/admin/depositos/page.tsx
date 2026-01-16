@@ -386,7 +386,7 @@ export default function AdminDepositosPage() {
                       </thead>
                       <tbody>
                         {filteredDeposits.map((deposit) => {
-                          const config = statusConfig[deposit.status as keyof typeof statusConfig]
+                          const config = statusConfig[deposit.status as keyof typeof statusConfig] || statusConfig.pendiente
                           const StatusIcon = config.icon
                           return (
                             <tr key={deposit.id} className="border-b hover:bg-muted/30 transition-colors">
