@@ -99,7 +99,12 @@ export async function getCurrentUser() {
       error,
     } = await supabase.auth.getUser()
 
-    if (error || !user) return null
+    if (error || !user) {
+      console.error("❌ getCurrentUser: No auth user found", error)
+      return null
+    }
+
+    console.log("🔐 getCurrentUser: Fetching user data for:", user.id)
 
     // Obtener datos adicionales de la tabla users
     const { data: userData, error: userError } = await supabase
@@ -108,10 +113,39 @@ export async function getCurrentUser() {
       .eq("id", user.id)
       .single()
 
-    if (userError) return null
+    if (userError) {
+      console.error("❌ getCurrentUser: Error fetching user data:", userError.message, userError.details, userError.hint)
+      console.warn("⚠️ getCurrentUser: Attempting to create user record...")
+      
+      // Intentar crear el registro si no existe
+      const { data: insertData, error: insertError } = await supabase
+        .from("users")
+        .insert({
+          id: user.id,
+          email: user.email,
+          name: user.user_metadata?.full_name || user.email.split("@")[0],
+          plan: "gratuito",
+          balance: 0,
+          is_active: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .select()
+        .single()
 
+      if (insertError) {
+        console.error("❌ Could not create user record:", insertError)
+        return null
+      }
+
+      console.log("✅ User record created:", insertData)
+      return insertData as User
+    }
+
+    console.log("✅ getCurrentUser: User data fetched:", userData)
     return userData as User
-  } catch (error) {
+  } catch (error: any) {
+    console.error("❌ getCurrentUser exception:", error.message, error)
     return null
   }
 }
