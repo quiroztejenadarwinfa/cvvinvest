@@ -106,7 +106,44 @@ export async function getCurrentUser() {
 
     console.log("🔐 getCurrentUser: Fetching user data for:", user.id)
 
-    // Obtener datos adicionales de la tabla users
+    // Usar API endpoint que ignora RLS (usa service_role key)
+    try {
+      const response = await fetch(`/api/auth/user?id=${user.id}`)
+      
+      if (response.ok) {
+        const userData = await response.json()
+        console.log("✅ getCurrentUser: User data fetched via API:", userData)
+        return userData as User
+      }
+
+      if (response.status === 500) {
+        // Si es error 500, probablemente el usuario no existe, intentar crear
+        console.warn("⚠️ getCurrentUser: User not found, creating...")
+        
+        const createResponse = await fetch("/api/auth/user", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: user.id,
+            email: user.email,
+            name: user.user_metadata?.full_name || user.email.split("@")[0],
+            plan: "gratuito",
+            balance: 0,
+            is_active: true,
+          }),
+        })
+
+        if (createResponse.ok) {
+          const newUser = await createResponse.json()
+          console.log("✅ getCurrentUser: User created via API:", newUser)
+          return newUser as User
+        }
+      }
+    } catch (apiError) {
+      console.error("❌ getCurrentUser: API error:", apiError)
+    }
+
+    // Fallback: intentar con Supabase directo (si RLS está deshabilitado)
     const { data: userData, error: userError } = await supabase
       .from("users")
       .select("*")
@@ -114,10 +151,9 @@ export async function getCurrentUser() {
       .single()
 
     if (userError) {
-      console.error("❌ getCurrentUser: Error fetching user data:", userError.message, userError.details, userError.hint)
-      console.warn("⚠️ getCurrentUser: Attempting to create user record...")
+      console.error("❌ getCurrentUser: Error from Supabase:", userError.message)
       
-      // Intentar crear el registro si no existe
+      // Ultimo intento: crear via Supabase
       const { data: insertData, error: insertError } = await supabase
         .from("users")
         .insert({
@@ -138,11 +174,11 @@ export async function getCurrentUser() {
         return null
       }
 
-      console.log("✅ User record created:", insertData)
+      console.log("✅ User record created via Supabase:", insertData)
       return insertData as User
     }
 
-    console.log("✅ getCurrentUser: User data fetched:", userData)
+    console.log("✅ getCurrentUser: User data fetched from Supabase:", userData)
     return userData as User
   } catch (error: any) {
     console.error("❌ getCurrentUser exception:", error.message, error)
