@@ -180,7 +180,7 @@ export default function AdminUsuariosPage() {
       user.email.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesPlan = filterPlan === "all" || user.plan === filterPlan
     const isPending = showPendingOnly ? !user.is_active : true
-    return matchesSearch && matchesPlan && user.role === "user" && isPending
+    return matchesSearch && matchesPlan && isPending
   })
 
   const openEditDialog = (user: User) => {
