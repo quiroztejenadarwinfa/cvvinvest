@@ -48,6 +48,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { id, email, name, plan, balance, is_active } = body
 
+    console.log("🔐 API POST: Request body:", { id, email, name, plan, balance, is_active })
+
     if (!id || !email) {
       return NextResponse.json(
         { error: "ID and email required" },
@@ -72,10 +74,10 @@ export async function POST(request: NextRequest) {
       .select("*")
 
     if (error) {
-      console.error("❌ API POST: Error creating user:", error.message, error.details, error.hint)
+      console.error("❌ API POST: Error creating user:", error.code, error.message, error.details, error.hint)
       
       // Si es un conflicto (usuario ya existe), intentar obtenerlo
-      if (error.code === "23505" || error.message.includes("duplicate")) {
+      if (error.code === "23505" || error.message.includes("duplicate") || error.message.includes("Duplicate key")) {
         console.log("ℹ️ API POST: User already exists, fetching existing user...")
         const { data: existingUser, error: fetchError } = await supabase
           .from("users")
@@ -91,6 +93,8 @@ export async function POST(request: NextRequest) {
           console.log("✅ API POST: Returning existing user:", existingUser[0].email)
           return NextResponse.json(existingUser[0])
         }
+
+        return NextResponse.json({ error: "User exists but could not fetch" }, { status: 500 })
       }
 
       return NextResponse.json({ error: error.message }, { status: 500 })
@@ -104,7 +108,7 @@ export async function POST(request: NextRequest) {
     console.log("✅ API POST: User created successfully:", data[0].email)
     return NextResponse.json(data[0])
   } catch (error: any) {
-    console.error("❌ API POST: Exception:", error.message)
+    console.error("❌ API POST: Exception:", error.message, error.stack)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
