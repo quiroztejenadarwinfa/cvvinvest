@@ -75,11 +75,11 @@ export function DashboardSidebar({ user, onLogout }: DashboardSidebarProps) {
       <div className="p-4 border-b border-border bg-gradient-to-br from-primary/5 to-primary/10">
         <div className="flex items-center gap-3 mb-3">
           <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary/50 flex items-center justify-center text-white font-bold text-lg">
-            {user.name[0].toUpperCase()}
+            {(user.name || user.email || "U")[0].toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-semibold truncate text-sm">{user.name}</div>
-            <div className="text-xs text-muted-foreground truncate">{user.email}</div>
+            <div className="font-semibold truncate text-sm">{user.name || user.email?.split("@")[0] || "Usuario"}</div>
+            <div className="text-xs text-muted-foreground truncate">{user.email || "Sin email"}</div>
           </div>
         </div>
         
