@@ -149,47 +149,8 @@ export async function getCurrentUser() {
       console.error("❌ getCurrentUser: API error:", apiError)
     }
 
-    // Fallback: intentar con Supabase directo (si RLS está deshabilitado)
-    const { data: userData, error: userError } = await supabase
-      .from("users")
-      .select("*")
-      .eq("id", user.id)
-
-    if (userError) {
-      console.error("❌ getCurrentUser: Error from Supabase:", userError.message)
-      
-      // Ultimo intento: crear via Supabase
-      const { data: insertData, error: insertError } = await supabase
-        .from("users")
-        .insert({
-          id: user.id,
-          email: user.email,
-          name: user.user_metadata?.full_name || user.email.split("@")[0],
-          plan: "gratuito",
-          balance: 0,
-          is_active: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .select()
-
-      if (insertError) {
-        console.error("❌ Could not create user record:", insertError)
-        return null
-      }
-
-      if (insertData && insertData.length > 0) {
-        console.log("✅ User record created via Supabase:", insertData[0])
-        return insertData[0] as User
-      }
-    }
-
-    if (userData && userData.length > 0) {
-      console.log("✅ getCurrentUser: User data fetched from Supabase:", userData[0])
-      return userData[0] as User
-    }
-
-    console.warn("⚠️ getCurrentUser: No user data found after all attempts")
+    // Si todo falla, no hay usuario
+    console.warn("⚠️ getCurrentUser: Could not fetch user from API after all attempts")
     return null
   } catch (error: any) {
     console.error("❌ getCurrentUser exception:", error.message, error)
