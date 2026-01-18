@@ -67,26 +67,62 @@ export async function loginWithSupabase(email: string, password: string) {
 
     if (error) return { success: false, error: error.message, user: null }
 
-    // Obtener datos del usuario
-    const { data: userData, error: userError } = await supabase
-      .from("users")
-      .select("*")
-      .eq("id", data.user.id)
-      .single()
+    // Obtener datos del usuario via API (ignora RLS con service_role key)
+    try {
+      const response = await fetch(`/api/auth/user?id=${data.user.id}`)
+      
+      if (response.ok) {
+        const userData = await response.json()
+        
+        const user: User = {
+          id: userData.id,
+          email: userData.email,
+          name: userData.name || "",
+          plan: userData.plan || "gratuito",
+          balance: userData.balance || 0,
+          createdAt: new Date(userData.created_at),
+        }
 
-    if (userError) return { success: false, error: userError.message, user: null }
+        setSessionUser(user)
+        return { success: true, error: null, user }
+      }
 
-    const user: User = {
-      id: userData.id,
-      email: userData.email,
-      name: userData.name || "",
-      plan: userData.plan || "gratuito",
-      balance: userData.balance || 0,
-      createdAt: new Date(userData.created_at),
+      // Si 404, crear usuario
+      if (response.status === 404) {
+        const createResponse = await fetch("/api/auth/user", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: data.user.id,
+            email: data.user.email,
+            name: data.user.user_metadata?.full_name || data.user.email.split("@")[0],
+            plan: "gratuito",
+            balance: 0,
+            is_active: true,
+          }),
+        })
+
+        if (createResponse.ok) {
+          const newUser = await createResponse.json()
+          
+          const user: User = {
+            id: newUser.id,
+            email: newUser.email,
+            name: newUser.name || "",
+            plan: newUser.plan || "gratuito",
+            balance: newUser.balance || 0,
+            createdAt: new Date(newUser.created_at),
+          }
+
+          setSessionUser(user)
+          return { success: true, error: null, user }
+        }
+      }
+
+      return { success: false, error: "Could not fetch user from API", user: null }
+    } catch (apiError: any) {
+      return { success: false, error: apiError.message, user: null }
     }
-
-    setSessionUser(user)
-    return { success: true, error: null, user }
   } catch (error: any) {
     return { success: false, error: error.message, user: null }
   }
