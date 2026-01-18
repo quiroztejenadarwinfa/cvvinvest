@@ -1,10 +1,15 @@
 import { createClient } from "@supabase/supabase-js"
 import { NextRequest, NextResponse } from "next/server"
 
+// Validar que tenemos la service_role key
+if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  console.error("❌ CRITICAL: SUPABASE_SERVICE_ROLE_KEY not configured in environment variables!")
+}
+
 // Usar service_role key que ignora RLS
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ""
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
 )
 
 export async function GET(request: NextRequest) {
