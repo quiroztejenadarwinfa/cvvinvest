@@ -18,12 +18,11 @@ export async function GET(request: NextRequest) {
 
     console.log("🔐 API GET: Fetching user:", userId)
 
-    // Usar limit(1) en lugar de single() para mejor manejo de errores
+    // Usar select(*) sin single() para mejor manejo de errores
     const { data, error } = await supabase
       .from("users")
       .select("*")
       .eq("id", userId)
-      .limit(1)
 
     if (error) {
       console.error("❌ API GET: Error fetching user:", error.message, error.details)
@@ -65,13 +64,12 @@ export async function POST(request: NextRequest) {
         email,
         name: name || email.split("@")[0],
         plan: plan || "gratuito",
-        balance: balance || 0,
+        balance: parseFloat(String(balance)) || 0,
         is_active: is_active !== false,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
-      .select()
-      .limit(1)
+      .select("*")
 
     if (error) {
       console.error("❌ API POST: Error creating user:", error.message, error.details, error.hint)
@@ -83,7 +81,6 @@ export async function POST(request: NextRequest) {
           .from("users")
           .select("*")
           .eq("id", id)
-          .limit(1)
 
         if (fetchError) {
           console.error("❌ Could not fetch existing user:", fetchError)
