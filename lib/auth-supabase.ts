@@ -116,9 +116,9 @@ export async function getCurrentUser() {
         return userData as User
       }
 
-      if (response.status === 500) {
-        // Si es error 500, probablemente el usuario no existe, intentar crear
-        console.warn("⚠️ getCurrentUser: User not found, creating...")
+      // Si es 404, el usuario no existe, intentar crear
+      if (response.status === 404) {
+        console.warn("⚠️ getCurrentUser: User not found (404), creating...")
         
         const createResponse = await fetch("/api/auth/user", {
           method: "POST",
@@ -137,7 +137,13 @@ export async function getCurrentUser() {
           const newUser = await createResponse.json()
           console.log("✅ getCurrentUser: User created via API:", newUser)
           return newUser as User
+        } else {
+          console.error("❌ getCurrentUser: Failed to create user via API:", await createResponse.text())
         }
+      }
+      
+      if (response.status === 500) {
+        console.error("❌ getCurrentUser: Server error from API")
       }
     } catch (apiError) {
       console.error("❌ getCurrentUser: API error:", apiError)
