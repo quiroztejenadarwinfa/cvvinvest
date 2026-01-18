@@ -28,7 +28,7 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
       <div className="flex items-center justify-between gap-4 mb-4">
         <div className="flex items-center gap-4 flex-1">
           <div>
-            <h1 className="text-2xl font-bold">¡Bienvenido, {user.name}!</h1>
+            <h1 className="text-2xl font-bold">¡Bienvenido, {user.name || user.email?.split("@")[0] || "Usuario"}!</h1>
             <p className="text-sm text-muted-foreground">Accede a tu información de inversión</p>
           </div>
         </div>
@@ -47,8 +47,8 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold text-muted-foreground uppercase">Cuenta</p>
-            <p className="font-semibold text-foreground truncate">{user.name}</p>
-            <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+            <p className="font-semibold text-foreground truncate">{user.name || user.email?.split("@")[0] || "Usuario"}</p>
+            <p className="text-xs text-muted-foreground truncate">{user.email || "Sin email"}</p>
           </div>
         </div>
 
