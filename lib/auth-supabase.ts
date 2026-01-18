@@ -154,7 +154,6 @@ export async function getCurrentUser() {
       .from("users")
       .select("*")
       .eq("id", user.id)
-      .single()
 
     if (userError) {
       console.error("❌ getCurrentUser: Error from Supabase:", userError.message)
@@ -173,19 +172,25 @@ export async function getCurrentUser() {
           updated_at: new Date().toISOString(),
         })
         .select()
-        .single()
 
       if (insertError) {
         console.error("❌ Could not create user record:", insertError)
         return null
       }
 
-      console.log("✅ User record created via Supabase:", insertData)
-      return insertData as User
+      if (insertData && insertData.length > 0) {
+        console.log("✅ User record created via Supabase:", insertData[0])
+        return insertData[0] as User
+      }
     }
 
-    console.log("✅ getCurrentUser: User data fetched from Supabase:", userData)
-    return userData as User
+    if (userData && userData.length > 0) {
+      console.log("✅ getCurrentUser: User data fetched from Supabase:", userData[0])
+      return userData[0] as User
+    }
+
+    console.warn("⚠️ getCurrentUser: No user data found after all attempts")
+    return null
   } catch (error: any) {
     console.error("❌ getCurrentUser exception:", error.message, error)
     return null
