@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { getSessionUser, clearSession, ADMIN_EMAIL, type User, getAllUsers, setAllUsers } from "@/lib/auth"
+import { getSessionUser, clearSession, ADMIN_EMAIL, type User, getAllUsers, setAllUsers, getAllUsersSupabase } from "@/lib/auth"
 import { approveUser, deactivateUser } from "@/lib/auth-supabase"
 import { createUserNotification, createAdminNotification } from "@/lib/notifications"
 import { getPlanFeatures, type PlanType } from "@/lib/plan-features"
@@ -88,23 +88,24 @@ export default function AdminUsuariosPage() {
 
   const loadUsers = async () => {
     try {
-      console.log("🔄 Loading users from localStorage...")
+      console.log("🔄 Loading users from Supabase...")
       
-      // Obtener usuarios de localStorage
-      const allUsers = getAllUsers()
-      console.log("✅ Users loaded:", { count: allUsers.length, users: allUsers })
+      // Obtener usuarios de Supabase
+      const allUsers = await getAllUsersSupabase()
+      console.log("✅ Users loaded from Supabase:", { count: allUsers.length, users: allUsers })
       
       if (allUsers && allUsers.length > 0) {
         setUsers(allUsers)
       } else {
-        console.warn("⚠️ No users in localStorage")
-        setUsers([])
+        console.warn("⚠️ No users in Supabase, trying localStorage...")
+        const localUsers = getAllUsers()
+        setUsers(localUsers)
       }
     } catch (error) {
       console.error('❌ Error loading users:', error)
       toast({
         title: "Error",
-        description: "Error al cargar usuarios del almacenamiento local",
+        description: "Error al cargar usuarios",
         variant: "destructive"
       })
     }

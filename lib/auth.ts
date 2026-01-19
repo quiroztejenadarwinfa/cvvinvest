@@ -33,6 +33,216 @@ export interface Deposit {
   notes?: string
 }
 
+// ==================== FUNCIONES SUPABASE ====================
+
+// Obtener todos los usuarios desde Supabase
+export async function getAllUsersSupabase(): Promise<User[]> {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+    
+    if (error) {
+      console.error('[Supabase] Error al obtener usuarios:', error)
+      return []
+    }
+    
+    console.log(`[Supabase] Usuarios obtenidos: ${data?.length || 0}`)
+    return data || []
+  } catch (error) {
+    console.error('[Supabase] Exception al obtener usuarios:', error)
+    return []
+  }
+}
+
+// Obtener inversiones desde Supabase
+export async function getAllInvestmentsSupabase(): Promise<any[]> {
+  try {
+    const { data, error } = await supabase
+      .from('investments')
+      .select('*')
+    
+    if (error) {
+      console.error('[Supabase] Error al obtener inversiones:', error)
+      return []
+    }
+    
+    console.log(`[Supabase] Inversiones obtenidas: ${data?.length || 0}`)
+    return data || []
+  } catch (error) {
+    console.error('[Supabase] Exception al obtener inversiones:', error)
+    return []
+  }
+}
+
+// Aprobar inversión en Supabase
+export async function approveInvestmentSupabase(investmentId: string, notes?: string): Promise<boolean> {
+  try {
+    console.log(`[Supabase] Aprobando inversión: ${investmentId}`)
+    
+    // Obtener la inversión
+    const { data: investment, error: getError } = await supabase
+      .from('investments')
+      .select('*')
+      .eq('id', investmentId)
+      .single()
+    
+    if (getError || !investment) {
+      console.error('[Supabase] Inversión no encontrada:', getError)
+      return false
+    }
+    
+    console.log('[Supabase] Inversión encontrada:', investment)
+    
+    // Obtener el usuario
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', investment.user_id)
+      .single()
+    
+    if (userError || !user) {
+      console.error('[Supabase] Usuario no encontrado:', userError)
+      return false
+    }
+    
+    console.log('[Supabase] Usuario encontrado:', user.email, 'Plan:', user.plan)
+    
+    // Normalizar el plan
+    const normalizePlanName = (name: string): string => {
+      const normalized = name
+        .toLowerCase()
+        .replace(/á/g, "a")
+        .replace(/é/g, "e")
+        .replace(/í/g, "i")
+        .replace(/ó/g, "o")
+        .replace(/ú/g, "u")
+        .trim()
+      
+      const planMap: Record<string, string> = {
+        gratuito: "gratuito",
+        estandar: "estandar",
+        pro: "pro",
+        vip: "vip",
+        elite: "elite",
+      }
+      
+      return planMap[normalized] || user.plan
+    }
+    
+    const newPlan = normalizePlanName(investment.plan_name)
+    console.log(`[Supabase] Plan actualizado de ${user.plan} a ${newPlan}`)
+    
+    // Actualizar inversión como aprobada
+    const { error: updateInvError } = await supabase
+      .from('investments')
+      .update({
+        status: 'aprobado',
+        approved_at: new Date().toISOString(),
+        notes: notes
+      })
+      .eq('id', investmentId)
+    
+    if (updateInvError) {
+      console.error('[Supabase] Error al actualizar inversión:', updateInvError)
+      return false
+    }
+    
+    // Actualizar usuario: restar balance y cambiar plan
+    const newBalance = user.balance - investment.amount
+    const { error: updateUserError } = await supabase
+      .from('users')
+      .update({
+        balance: newBalance,
+        plan: newPlan
+      })
+      .eq('id', investment.user_id)
+    
+    if (updateUserError) {
+      console.error('[Supabase] Error al actualizar usuario:', updateUserError)
+      return false
+    }
+    
+    console.log(`[Supabase] Inversión aprobada exitosamente`)
+    return true
+  } catch (error) {
+    console.error('[Supabase] Exception al aprobar inversión:', error)
+    return false
+  }
+}
+
+// Aprobar depósito en Supabase
+export async function approveDepositSupabase(depositId: string, notes?: string): Promise<boolean> {
+  try {
+    console.log(`[Supabase] Aprobando depósito: ${depositId}`)
+    
+    // Obtener el depósito
+    const { data: deposit, error: getError } = await supabase
+      .from('deposits')
+      .select('*')
+      .eq('id', depositId)
+      .single()
+    
+    if (getError || !deposit) {
+      console.error('[Supabase] Depósito no encontrado:', getError)
+      return false
+    }
+    
+    console.log('[Supabase] Depósito encontrado:', deposit)
+    
+    // Obtener el usuario
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', deposit.user_id)
+      .single()
+    
+    if (userError || !user) {
+      console.error('[Supabase] Usuario no encontrado:', userError)
+      return false
+    }
+    
+    console.log('[Supabase] Usuario encontrado:', user.email)
+    
+    // Actualizar depósito como aprobado
+    const { error: updateDepError } = await supabase
+      .from('deposits')
+      .update({
+        status: 'aprobado',
+        approved_at: new Date().toISOString(),
+        notes: notes
+      })
+      .eq('id', depositId)
+    
+    if (updateDepError) {
+      console.error('[Supabase] Error al actualizar depósito:', updateDepError)
+      return false
+    }
+    
+    // Actualizar usuario: sumar balance
+    const newBalance = user.balance + deposit.amount
+    const { error: updateUserError } = await supabase
+      .from('users')
+      .update({
+        balance: newBalance
+      })
+      .eq('id', deposit.user_id)
+    
+    if (updateUserError) {
+      console.error('[Supabase] Error al actualizar usuario:', updateUserError)
+      return false
+    }
+    
+    console.log(`[Supabase] Depósito aprobado exitosamente`)
+    return true
+  } catch (error) {
+    console.error('[Supabase] Exception al aprobar depósito:', error)
+    return false
+  }
+}
+
+// ==================== FUNCIONES ORIGINALES (localStorage como fallback) ====================
+
 // Función para verificar si es admin
 export function isAdmin(email: string, password: string): boolean {
   return email === ADMIN_EMAIL && password === ADMIN_PASSWORD
@@ -663,7 +873,7 @@ export function getUserInvestments(): Investment[] {
 
 // Aprobar inversión
 export function approveInvestment(investmentId: string, notes?: string): boolean {
-  console.log(`[approveInvestment] Iniciando aprobación de inversión: ${investmentId}`)
+  console.log(`[approveInvestment] Usando versión localStorage (fallback)`)
   
   const investments = getAllInvestments()
   const investment = investments.find((i) => i.id === investmentId)
@@ -682,7 +892,6 @@ export function approveInvestment(investmentId: string, notes?: string): boolean
   // Restar del balance del usuario
   const users = getAllUsers()
   console.log(`[approveInvestment] Buscando usuario por ID: ${investment.userId} o email: ${investment.userEmail}`)
-  console.log(`[approveInvestment] Usuarios en BD:`, users.map(u => ({id: u.id, email: u.email})))
   
   const user = users.find((u) => u.id === investment.userId || u.email === investment.userEmail)
   

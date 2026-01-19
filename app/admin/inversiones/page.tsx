@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
-import { getSessionUser, getAllInvestments, approveInvestment, rejectInvestment, getAllUsers, setAllUsers, ADMIN_EMAIL } from '@/lib/auth'
+import { getSessionUser, getAllInvestments, approveInvestmentSupabase, rejectInvestment, getAllUsers, setAllUsers, ADMIN_EMAIL } from '@/lib/auth'
 import { createUserNotification, createAdminNotification } from '@/lib/notifications'
 
 import type { PlanType } from '@/lib/plan-features'
@@ -252,7 +252,14 @@ export default function AdminInvestmentPage() {
         
         setMessage(`✓ Inversión cancelada. Notificación enviada al usuario.`)
       } else if (actionType === 'approve') {
-        approveInvestment(selectedInvestment.id, actionNotes)
+        // Usar Supabase para aprobar
+        const success = await approveInvestmentSupabase(selectedInvestment.id, actionNotes)
+        
+        if (!success) {
+          setMessage('✗ Error al aprobar la inversión en la base de datos.')
+          setTimeout(() => setMessage(''), 5000)
+          return
+        }
         
         // Crear notificación para el usuario
         createUserNotification(selectedInvestment.userEmail, {
