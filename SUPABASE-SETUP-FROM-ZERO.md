@@ -1,14 +1,66 @@
+# 🗄️ Crear Supabase desde Cero - CVVInvest
+
+## 📋 Guía Completa para Configurar Supabase
+
+### 🚀 Paso 1: Crear Cuenta y Proyecto
+
+#### 1.1 Crear Cuenta en Supabase
+1. Ve a: **https://supabase.com**
+2. Haz clic en **"Start your project"**
+3. **Regístrate** con GitHub, Google o email
+4. **Confirma tu email** si es necesario
+
+#### 1.2 Crear Nuevo Proyecto
+1. En el dashboard, haz clic en **"New Project"**
+2. **Selecciona tu organización** (o crea una nueva)
+3. **Configuración del proyecto**:
+   - **Name**: `CVVInvest Platform`
+   - **Database Password**: Genera una contraseña segura (guárdala)
+   - **Region**: Selecciona la más cercana (ej: `South America (São Paulo)`)
+   - **Pricing Plan**: `Free` (suficiente para empezar)
+4. Haz clic en **"Create new project"**
+5. **Espera 2-3 minutos** mientras se crea el proyecto
+
+### 🔑 Paso 2: Obtener Credenciales
+
+#### 2.1 Acceder a Settings
+1. Una vez creado el proyecto, ve a **Settings** (⚙️) en el menú lateral
+2. Haz clic en **"API"**
+
+#### 2.2 Copiar Credenciales Importantes
+Copia y guarda estos valores (los necesitarás después):
+
+```env
+# URL del Proyecto
+Project URL: https://[tu-proyecto-id].supabase.co
+
+# API Keys
+anon public: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+service_role: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**⚠️ IMPORTANTE**: 
+- `anon public` es segura para el frontend
+- `service_role` es SECRETA, solo para backend
+
+### 🗄️ Paso 3: Crear Base de Datos
+
+#### 3.1 Acceder al SQL Editor
+1. Ve a **SQL Editor** en el menú lateral
+2. Haz clic en **"New query"**
+
+#### 3.2 Ejecutar Script de Creación
+Copia y pega este script completo:
+
+```sql
 -- =============================================
 -- CREAR TABLAS CVVINVEST - SUPABASE
--- Ejecuta este script completo en tu editor SQL de Supabase
 -- =============================================
 
 -- Habilitar extensiones necesarias
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- LIMPIAR TABLAS EXISTENTES (si existen)
-DROP TABLE IF EXISTS chat_messages CASCADE;
-DROP TABLE IF EXISTS chat_sessions CASCADE;
 DROP TABLE IF EXISTS notifications CASCADE;
 DROP TABLE IF EXISTS withdrawals CASCADE;
 DROP TABLE IF EXISTS investments CASCADE;
@@ -205,17 +257,15 @@ INSERT INTO users (
   plan, 
   balance, 
   is_active,
-  provider,
-  password_hash
+  provider
 ) VALUES (
-  'exe.main.darwin@gmail.com', 
-  'Darwin Quiroz - Administrador', 
+  'admin@cvvinvest.com', 
+  'Administrador CVVInvest', 
   'admin', 
   'elite', 
   100000.00, 
   true,
-  'email',
-  '$2b$10$K8BqaJ4iWNOy4wHADhdOOeIjHrqjcEu5v5dqxjdqxjdqxjdqxjdqxj' -- Hash de 'admin12345'
+  'email'
 ) ON CONFLICT (email) DO NOTHING;
 
 -- Insertar usuario de prueba
@@ -300,7 +350,7 @@ SELECT
   'Tu cuenta ha sido creada exitosamente. Comienza a invertir hoy mismo.',
   '{"welcome": true, "first_login": true}'::jsonb
 FROM users u 
-WHERE u.email IN ('exe.main.darwin@gmail.com', 'test@cvvinvest.com')
+WHERE u.email IN ('admin@cvvinvest.com', 'test@cvvinvest.com')
 ON CONFLICT DO NOTHING;
 
 -- =============================================
@@ -350,3 +400,72 @@ SELECT
 UNION ALL
 SELECT 
   'notifications' as tabla, COUNT(*) as registros FROM notifications;
+```
+
+#### 3.3 Ejecutar el Script
+1. **Pega todo el script** en el editor SQL
+2. Haz clic en **"Run"** (▶️)
+3. **Espera** a que termine (puede tomar 30-60 segundos)
+4. **Verifica** que no haya errores en la consola
+
+### ✅ Paso 4: Verificar Creación
+
+#### 4.1 Verificar Tablas
+1. Ve a **Table Editor** en el menú lateral
+2. Deberías ver estas tablas:
+   - ✅ `users` (2 registros)
+   - ✅ `deposits` (1 registro)
+   - ✅ `investments` (1 registro)
+   - ✅ `withdrawals` (0 registros)
+   - ✅ `notifications` (2 registros)
+   - ✅ `chat_sessions` (0 registros)
+   - ✅ `chat_messages` (0 registros)
+
+#### 4.2 Verificar Datos de Prueba
+1. Haz clic en la tabla **`users`**
+2. Deberías ver:
+   - **Admin**: `admin@cvvinvest.com`
+   - **Usuario de prueba**: `test@cvvinvest.com`
+
+### 🔐 Paso 5: Configurar Autenticación
+
+#### 5.1 Habilitar Autenticación
+1. Ve a **Authentication** en el menú lateral
+2. Ve a **Settings**
+3. **Configuración recomendada**:
+   - ✅ **Enable email confirmations**: `Disabled` (para desarrollo)
+   - ✅ **Enable phone confirmations**: `Disabled`
+   - ✅ **Enable custom SMTP**: `Disabled` (usar Supabase SMTP por ahora)
+
+#### 5.2 Configurar Providers (Opcional)
+Si quieres OAuth con Google/Microsoft:
+1. Ve a **Authentication** > **Providers**
+2. Configura **Google** y/o **Microsoft** con tus credenciales
+
+### 📝 Paso 6: Guardar Credenciales
+
+Crea un archivo temporal con tus nuevas credenciales:
+
+```env
+# NUEVAS CREDENCIALES SUPABASE
+NEXT_PUBLIC_SUPABASE_URL=https://[tu-nuevo-proyecto-id].supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=[tu-nueva-anon-key]
+SUPABASE_SERVICE_ROLE_KEY=[tu-nueva-service-role-key]
+
+# USUARIOS DE PRUEBA
+Admin: admin@cvvinvest.com
+Usuario: test@cvvinvest.com
+```
+
+## 🎉 ¡Supabase Configurado!
+
+Tu nueva base de datos Supabase está lista con:
+- ✅ **7 tablas** creadas con relaciones
+- ✅ **Índices** optimizados para rendimiento
+- ✅ **Datos de prueba** incluidos
+- ✅ **Triggers** automáticos para timestamps
+- ✅ **Constraints** de validación
+- ✅ **Usuarios de ejemplo** para testing
+
+### 📋 Próximo Paso
+Actualiza las variables de entorno en tu proyecto local y en Vercel con las nuevas credenciales.
