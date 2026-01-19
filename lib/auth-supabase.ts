@@ -52,6 +52,7 @@ export async function signUpWithEmail(
           id: data.user.id,
           email: data.user.email,
           name: name,
+          password_hash: password, // Usar la contraseña proporcionada
           plan: "gratuito",
           balance: 0,
           is_active: true,
