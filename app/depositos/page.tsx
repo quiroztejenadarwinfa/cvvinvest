@@ -44,12 +44,34 @@ export default function DepositosPage() {
   useEffect(() => {
     if (!currentDepositId) return
 
-    const interval = setInterval(() => {
+    const interval = setInterval(async () => {
       const deposits = getUserDeposits()
       const deposit = deposits.find(d => d.id === currentDepositId)
       
       if (deposit) {
         if (deposit.status === "aprobado") {
+          // Refrescar datos del usuario desde Supabase
+          if (user && user.id) {
+            try {
+              const response = await fetch(`/api/user/refresh?userId=${user.id}`)
+              if (response.ok) {
+                const data = await response.json()
+                if (data.user) {
+                  setUser({
+                    ...user,
+                    balance: data.user.balance
+                  })
+                  localStorage.setItem('cvvinvest_user', JSON.stringify({
+                    ...user,
+                    balance: data.user.balance
+                  }))
+                }
+              }
+            } catch (error) {
+              console.error('Error refrescando usuario:', error)
+            }
+          }
+          
           setIsPaymentConfirmed(true)
           setLastDepositStatus({
             id: deposit.id,

@@ -111,10 +111,11 @@ export default function AdminDepositosPage() {
     return matchesSearch && matchesStatus
   })
 
-  const handleApprove = () => {
+  const handleApprove = async () => {
     if (!selectedDeposit) return
 
-    if (approveDeposit(selectedDeposit.id, actionNotes)) {
+    const result = await approveDeposit(selectedDeposit.id, actionNotes)
+    if (result) {
       toast({
         title: "Éxito",
         description: "Depósito aprobado. El saldo del usuario ha sido actualizado.",

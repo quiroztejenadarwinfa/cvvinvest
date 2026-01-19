@@ -384,7 +384,7 @@ export function getUserDeposits(): Deposit[] {
 }
 
 // Aprobar depósito
-export function approveDeposit(depositId: string, notes?: string): boolean {
+export async function approveDeposit(depositId: string, notes?: string): Promise<boolean> {
   const deposits = getAllDeposits()
   const deposit = deposits.find((d) => d.id === depositId)
 
@@ -394,7 +394,35 @@ export function approveDeposit(depositId: string, notes?: string): boolean {
   deposit.approvedAt = new Date().toISOString()
   deposit.notes = notes
 
-  // Actualizar balance del usuario
+  // Actualizar balance del usuario EN SUPABASE
+  try {
+    const response = await fetch('/api/admin/deposits/approve', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        depositId,
+        userId: deposit.userId,
+        amount: deposit.amount,
+        notes,
+        deposits: JSON.stringify(deposits), // Enviar datos para servidor
+      }),
+    })
+
+    if (!response.ok) {
+      console.error('Error al actualizar balance en Supabase:', response.statusText)
+      // Continuamos igual para actualizar localStorage
+    }
+
+    const result = await response.json()
+    console.log('✅ Balance actualizado en Supabase:', result)
+  } catch (error) {
+    console.error('Error al llamar API de aprobación:', error)
+    // Continuamos con localStorage
+  }
+
+  // Actualizar balance del usuario EN LOCALSTORAGE (respaldo)
   const users = getAllUsers()
   const user = users.find((u) => u.id === deposit.userId)
   if (user) {
