@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { getSessionUser, clearSession, ADMIN_EMAIL, type User, getAllUsers, setAllUsers, getAllUsersSupabase } from "@/lib/auth"
-import { approveUser, deactivateUser } from "@/lib/auth-supabase"
+import { approveUser, deactivateUser, updateUserPlan, updateUserProfile } from "@/lib/auth-supabase"
 import { createUserNotification, createAdminNotification } from "@/lib/notifications"
 import { getPlanFeatures, type PlanType } from "@/lib/plan-features"
 import { AdminSidebar } from "@/components/admin/sidebar"
@@ -191,7 +191,7 @@ export default function AdminUsuariosPage() {
     setShowPlanModal(true)
   }
 
-  const changePlan = () => {
+  const changePlan = async () => {
     if (!selectedUserForPlan || !newPlanValue) {
       setPlanChangeMessage({ type: "error", text: "Selecciona un plan válido" })
       return
@@ -202,67 +202,113 @@ export default function AdminUsuariosPage() {
       return
     }
 
-    const updatedUsers = users.map((u) =>
-      u.id === selectedUserForPlan.id ? { ...u, plan: newPlanValue as PlanType } : u
-    )
+    try {
+      // Actualizar en Supabase
+      const { user: updatedSupabaseUser, error } = await updateUserPlan(selectedUserForPlan.id, newPlanValue)
+      
+      if (error) {
+        setPlanChangeMessage({ type: "error", text: `Error: ${error}` })
+        throw new Error(error)
+      }
 
-    setAllUsers(updatedUsers)
-    setUsers(updatedUsers)
+      // Actualizar en localStorage y estado local
+      const updatedUsers = users.map((u) =>
+        u.id === selectedUserForPlan.id ? { ...u, plan: newPlanValue as PlanType } : u
+      )
 
-    // Solo crear notificación para el admin (usuario no recibe estas)
-    createAdminNotification({
-      type: 'plan_change',
-      title: 'Plan de Usuario Actualizado',
-      message: `Actualizaste el plan de ${selectedUserForPlan.name} a ${newPlanValue.toUpperCase()}`,
-      details: {
-        userId: selectedUserForPlan.id,
-        userName: selectedUserForPlan.name,
-        userEmail: selectedUserForPlan.email,
-        previousPlan: selectedUserForPlan.plan,
-        plan: newPlanValue,
-      },
-      read: false,
-    })
+      setAllUsers(updatedUsers)
+      setUsers(updatedUsers)
 
-    setPlanChangeMessage({
-      type: "success",
-      text: `✓ Plan actualizado a ${newPlanValue.toUpperCase()} correctamente`,
-    })
+      // Solo crear notificación para el admin (usuario no recibe estas)
+      createAdminNotification({
+        type: 'plan_change',
+        title: 'Plan de Usuario Actualizado',
+        message: `Actualizaste el plan de ${selectedUserForPlan.name} a ${newPlanValue.toUpperCase()}`,
+        details: {
+          userId: selectedUserForPlan.id,
+          userName: selectedUserForPlan.name,
+          userEmail: selectedUserForPlan.email,
+          previousPlan: selectedUserForPlan.plan,
+          plan: newPlanValue,
+        },
+        read: false,
+      })
 
-    setTimeout(() => {
-      setShowPlanModal(false)
-      setPlanChangeMessage(null)
-    }, 2000)
+      setPlanChangeMessage({
+        type: "success",
+        text: `✓ Plan actualizado a ${newPlanValue.toUpperCase()} correctamente`,
+      })
 
-    toast({
-      title: "Plan actualizado",
-      description: `Usuario actualizado a plan ${newPlanValue}`,
-    })
+      setTimeout(() => {
+        setShowPlanModal(false)
+        setPlanChangeMessage(null)
+      }, 2000)
+
+      toast({
+        title: "Plan actualizado",
+        description: `Usuario actualizado a plan ${newPlanValue}`,
+      })
+    } catch (error: any) {
+      console.error("Error actualizando plan:", error)
+      setPlanChangeMessage({ 
+        type: "error", 
+        text: `Error al actualizar plan: ${error.message || error}` 
+      })
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el plan del usuario",
+        variant: "destructive",
+      })
+    }
   }
 
-  const saveUserChanges = () => {
+  const saveUserChanges = async () => {
     if (!editingUser) return
 
-    const updatedUsers = users.map((u) => {
-      if (u.id === editingUser.id) {
-        return {
-          ...u,
-          name: editForm.name,
-          plan: editForm.plan as PlanType,
-          balance: editForm.balance,
-        }
+    try {
+      // Preparar datos a actualizar
+      const updates: Partial<User> = {
+        name: editForm.name,
+        plan: editForm.plan as PlanType,
+        balance: editForm.balance,
       }
-      return u
-    })
 
-    setAllUsers(updatedUsers)
-    setUsers(updatedUsers)
-    setEditingUser(null)
+      // Actualizar en Supabase
+      const { user: updatedSupabaseUser, error } = await updateUserProfile(editingUser.id, updates)
+      
+      if (error) {
+        throw new Error(error)
+      }
 
-    toast({
-      title: "Usuario actualizado",
-      description: "Los cambios se han guardado correctamente.",
-    })
+      // Actualizar en localStorage y estado local
+      const updatedUsers = users.map((u) => {
+        if (u.id === editingUser.id) {
+          return {
+            ...u,
+            name: editForm.name,
+            plan: editForm.plan as PlanType,
+            balance: editForm.balance,
+          }
+        }
+        return u
+      })
+
+      setAllUsers(updatedUsers)
+      setUsers(updatedUsers)
+      setEditingUser(null)
+
+      toast({
+        title: "Usuario actualizado",
+        description: "Los cambios se han guardado correctamente en Supabase.",
+      })
+    } catch (error: any) {
+      console.error("Error actualizando usuario:", error)
+      toast({
+        title: "Error",
+        description: `No se pudo actualizar el usuario: ${error.message || error}`,
+        variant: "destructive",
+      })
+    }
   }
 
   const deleteUser = (userId: string) => {

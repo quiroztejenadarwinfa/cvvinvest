@@ -148,12 +148,10 @@ export async function approveInvestmentSupabase(investmentId: string, notes?: st
       return false
     }
     
-    // Actualizar usuario: restar balance y cambiar plan
-    const newBalance = user.balance - investment.amount
+    // Actualizar usuario: solo cambiar plan (NO restar balance en inversión)
     const { error: updateUserError } = await supabase
       .from('users')
       .update({
-        balance: newBalance,
         plan: newPlan
       })
       .eq('id', investment.user_id)
