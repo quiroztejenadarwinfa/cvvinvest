@@ -26,15 +26,40 @@ export default function DashboardPage() {
     setLoading(false)
   }, [router])
 
-  // Recargar datos del usuario cada 2 segundos para ver cambios en tiempo real
+  // Refrescar datos del usuario desde Supabase cada 2 segundos para ver cambios en tiempo real
   useEffect(() => {
     if (!user) return
-    const interval = setInterval(() => {
+    
+    const interval = setInterval(async () => {
+      try {
+        // Primero intentar obtener desde Supabase
+        const response = await fetch(`/api/user/refresh?userId=${user.id}`)
+        if (response.ok) {
+          const data = await response.json()
+          if (data.user) {
+            const updatedUser = {
+              ...user,
+              balance: data.user.balance || user.balance,
+              plan: data.user.plan || user.plan,
+              name: data.user.name || user.name,
+            }
+            setUser(updatedUser)
+            // Actualizar también en localStorage para consistencia
+            localStorage.setItem('cvvinvest_user', JSON.stringify(updatedUser))
+            return
+          }
+        }
+      } catch (error) {
+        console.error('Error refrescando desde Supabase:', error)
+      }
+      
+      // Fallback: intentar desde localStorage
       const updatedUser = getSessionUser()
       if (updatedUser) {
         setUser(updatedUser)
       }
     }, 2000)
+    
     return () => clearInterval(interval)
   }, [user])
 
