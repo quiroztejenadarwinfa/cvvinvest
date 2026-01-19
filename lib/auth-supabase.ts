@@ -43,30 +43,34 @@ export async function signUpWithEmail(
 
     console.log("✅ Auth user created:", data.user?.id)
 
-    // Crear registro en tabla users
+    // Crear registro en tabla users via API route (con service_role, no sujeto a RLS)
     if (data.user) {
-      console.log("📊 Creating user record in database...")
-      const { data: insertData, error: insertError } = await supabase
-        .from("users")
-        .insert({
-          id: data.user.id,
-          email: data.user.email,
-          name: name,
-          password_hash: password, // Usar la contraseña proporcionada
-          plan: "gratuito",
-          balance: 0,
-          is_active: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+      console.log("📊 Creating user record via API...")
+      try {
+        const response = await fetch("/api/auth/user", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: data.user.id,
+            email: data.user.email,
+            name: name,
+            plan: "gratuito",
+            balance: 0,
+            is_active: true,
+          }),
         })
-        .select()
 
-      if (insertError) {
-        console.error("❌ Error inserting user record:", insertError.message, insertError.details)
-        throw insertError
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || "Failed to create user record")
+        }
+
+        const createdUser = await response.json()
+        console.log("✅ User record created via API:", createdUser.email)
+      } catch (apiError: any) {
+        console.error("❌ Error creating user record via API:", apiError.message)
+        throw apiError
       }
-
-      console.log("✅ User record created:", insertData)
     }
 
     return { user: data.user, error: null }

@@ -147,17 +147,28 @@ export async function registerWithSupabase(
 
     if (!data.user) return { success: false, error: "User creation failed", user: null }
 
-    // Crear registro en tabla users
-    const { error: insertError } = await supabase.from("users").insert({
-      id: data.user.id,
-      email: data.user.email,
-      name: name,
-      plan: "gratuito",
-      balance: 0,
-      is_active: true,
-    })
+    // Crear registro en tabla users via API route (con service_role, no sujeto a RLS)
+    try {
+      const response = await fetch("/api/auth/user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: data.user.id,
+          email: data.user.email,
+          name: name,
+          plan: "gratuito",
+          balance: 0,
+          is_active: true,
+        }),
+      })
 
-    if (insertError) return { success: false, error: insertError.message, user: null }
+      if (!response.ok) {
+        const errorData = await response.json()
+        return { success: false, error: errorData.error || "Failed to create user", user: null }
+      }
+    } catch (apiError: any) {
+      return { success: false, error: apiError.message, user: null }
+    }
 
     const user: User = {
       id: data.user.id,
