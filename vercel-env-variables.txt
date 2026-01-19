@@ -1,0 +1,15 @@
+# Variables de Entorno para Vercel - CVVInvest
+# Copia estas variables en tu dashboard de Vercel
+
+NEXT_PUBLIC_SUPABASE_URL=https://bbdltcgkidyokhxwyqku.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJiZGx0Y2draWR5b2toeHd5cWt1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4NDc4MzEsImV4cCI6MjA4NDQyMzgzMX0.0GU-UdZmvbsX8mrCFcD2Wb93QtSIffkLkT1-2DVYJGM
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJiZGx0Y2draWR5b2toeHd5cWt1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODg0NzgzMSwiZXhwIjoyMDg0NDIzODMxfQ.Xu2877cbzZ-_Zs9cdJPiKVfAmLkDaxU9jXWXQGEXWMU
+NEXTAUTH_SECRET=cvvinvest-super-secret-key-2025-production
+NEXTAUTH_URL=https://tu-dominio.vercel.app
+
+# OAuth (Opcional)
+GOOGLE_CLIENT_ID=demo-google-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=demo-google-client-secret
+MICROSOFT_CLIENT_ID=demo-microsoft-client-id
+MICROSOFT_CLIENT_SECRET=demo-microsoft-client-secret
+MICROSOFT_TENANT_ID=common

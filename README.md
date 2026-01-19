@@ -1,167 +1,170 @@
-# 🏦 CVVInvest Platform
+# 🏦 CVVInvest - Investment Platform
 
-Una plataforma de inversiones moderna y segura construida con Next.js 14, Supabase y TypeScript.
+A modern and secure investment platform built with Next.js 14, Supabase, and TypeScript.
 
-## ✨ Características Principales
+## ✨ Features
 
-- 🔐 **Autenticación segura** con Supabase Auth + OAuth
-- 📊 **Dashboard interactivo** para usuarios e inversores  
-- 👨‍💼 **Panel de administración** completo
-- 💰 **Sistema de depósitos** con múltiples métodos de pago
-- 📈 **Gestión de inversiones** con planes flexibles
-- 🔔 **Notificaciones en tiempo real**
-- 🎨 **Diseño responsive** con tema oscuro/claro
-- 🚀 **Optimizado para producción**
+- 🔐 **Secure Authentication** with Supabase Auth + OAuth
+- 📊 **Interactive Dashboard** for users and investors  
+- 👨‍💼 **Complete Admin Panel** with full management capabilities
+- 💰 **Deposit System** with multiple payment methods
+- 📈 **Investment Management** with flexible plans
+- 🔔 **Real-time Notifications**
+- 🎨 **Responsive Design** with dark/light theme
+- 🚀 **Production Ready** with Vercel deployment
 
-## 🛠️ Stack Tecnológico
+## 🛠️ Tech Stack
 
-| Categoría | Tecnología |
-|-----------|------------|
-| **Frontend** | Next.js 14, React 18, TypeScript |
-| **Backend** | Supabase (PostgreSQL) |
-| **Estilos** | Tailwind CSS, shadcn/ui |
-| **Auth** | Supabase Auth, NextAuth.js |
-| **Deploy** | Vercel |
+- **Frontend**: Next.js 14, React 18, TypeScript
+- **Backend**: Supabase (PostgreSQL)
+- **Styling**: Tailwind CSS, shadcn/ui
+- **Auth**: Supabase Auth, NextAuth.js
+- **Deploy**: Vercel
 
-## 🚀 Inicio Rápido (5 minutos)
+## 🚀 Quick Start
 
-### 1. Preparación automática
+### 1. Clone and Install
 ```bash
-# Clona y prepara el proyecto
-git clone https://github.com/tu-usuario/cvvinvest-platform.git
-cd cvvinvest-platform
-
-# Ejecuta el script de inicio rápido
-chmod +x quick-start.sh
-./quick-start.sh
+git clone https://github.com/quiroztejenadarwinfa/cvvinvest.git
+cd cvvinvest
+pnpm install
 ```
 
-### 2. Configurar Supabase
-1. Ve a [Supabase Dashboard](https://supabase.com/dashboard)
-2. Crea un nuevo proyecto
-3. En **SQL Editor**, ejecuta el contenido de `00-CREAR-TABLAS.sql`
-4. Copia las credenciales a `.env.local`
-
-### 3. Verificar conexión
+### 2. Setup Environment
 ```bash
-# Verifica que todo esté configurado
-node scripts/verify-supabase.js
+cp .env.local.example .env.local
+# Edit .env.local with your Supabase credentials
+```
 
-# Inicia en desarrollo
+### 3. Setup Database
+1. Go to [Supabase Dashboard](https://supabase.com/dashboard)
+2. Create a new project
+3. In **SQL Editor**, execute the content of `00-CREAR-TABLAS.sql`
+4. Update `.env.local` with your project credentials
+
+### 4. Run Development Server
+```bash
 pnpm dev
 ```
 
-¡Listo! Tu plataforma estará en http://localhost:3000
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## 📋 Deployment a Producción
+## 👥 Default Users
 
-Sigue la guía completa: **[scripts/deploy-setup.md](scripts/deploy-setup.md)**
+### Admin Access
+```
+Email:    exe.main.darwin@gmail.com
+Password: admin12345
+Role:     admin
+```
 
-### Resumen rápido:
-1. ✅ Ejecutar SQL en Supabase
-2. 🐙 Subir a GitHub  
-3. ☁️ Deploy en Vercel
-4. 🔧 Configurar variables de entorno
-5. 🎉 ¡Listo!
+### Test User
+```
+Email:    test@cvvinvest.com
+Password: (any password - auto-created)
+Role:     user
+```
 
-## 🏗️ Estructura del Proyecto
+## 📋 Deployment
+
+### Deploy to Vercel
+
+1. **Push to GitHub** (already done)
+2. **Connect to Vercel**:
+   - Go to [vercel.com/new](https://vercel.com/new)
+   - Import your GitHub repository
+   - Framework: Next.js (auto-detected)
+
+3. **Environment Variables**:
+   Copy from `vercel-env-variables.txt` to Vercel Dashboard
+
+4. **Deploy**: Click "Deploy" and wait 2-3 minutes
+
+### Environment Variables for Production
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://bbdltcgkidyokhxwyqku.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+NEXTAUTH_SECRET=your-production-secret
+NEXTAUTH_URL=https://your-domain.vercel.app
+```
+
+## 🏗️ Project Structure
 
 ```
-cvvinvest-platform/
+cvvinvest/
 ├── app/                    # App Router (Next.js 14)
 │   ├── api/               # API Routes
-│   ├── dashboard/         # Dashboard de usuario
-│   ├── admin/            # Panel de administración
-│   └── (auth)/           # Páginas de autenticación
-├── components/            # Componentes reutilizables
-├── lib/                  # Utilidades y configuración
-├── scripts/              # Scripts de utilidad
-└── 00-CREAR-TABLAS.sql   # Schema de base de datos
+│   ├── dashboard/         # User Dashboard
+│   ├── admin/            # Admin Panel
+│   └── (auth)/           # Authentication Pages
+├── components/            # Reusable Components
+├── lib/                  # Utilities & Configuration
+├── scripts/              # Utility Scripts
+└── 00-CREAR-TABLAS.sql   # Database Schema
 ```
 
-## 👥 Roles y Funcionalidades
+## 🔐 Security Features
 
-### 🙋‍♂️ Usuario Regular
-- ✅ Registro y login seguro
-- 📊 Dashboard personalizado
-- 💰 Realizar depósitos
-- 📈 Ver inversiones activas
-- 📱 Notificaciones en tiempo real
+- 🛡️ **Supabase Auth** with email confirmation
+- 🔒 **Row Level Security (RLS)** in database
+- ✅ **Data Validation** on frontend and backend
+- 🌐 **Security Headers** (CSP, HSTS, etc.)
+- 🔑 **Service Role Key** for admin operations
+- 🚫 **CSRF & XSS Protection**
 
-### 👨‍💼 Administrador
-- 🎛️ Panel de control completo
-- 👥 Gestión de usuarios
-- ✅ Aprobación de depósitos/retiros
-- 📊 Reportes y analytics
-- 🔧 Configuración del sistema
+## 📊 Database Schema
 
-## 🔐 Seguridad Implementada
+### Main Tables
+- **users**: User information and profiles
+- **deposits**: Deposit transactions
+- **investments**: Active investments
+- **withdrawals**: Withdrawal requests
+- **notifications**: Notification system
+- **chat_sessions**: Chat functionality
+- **chat_messages**: Chat messages
 
-- 🛡️ **Supabase Auth** con confirmación de email
-- 🔒 **Row Level Security (RLS)** en base de datos
-- ✅ **Validación de datos** en frontend y backend
-- 🌐 **Headers de seguridad** (CSP, HSTS, etc.)
-- 🔑 **Service Role Key** para operaciones admin
-- 🚫 **Protección CSRF** y XSS
-
-## 📊 Base de Datos
-
-### Tablas principales:
-- **users**: Información de usuarios
-- **deposits**: Depósitos y pagos
-- **investments**: Inversiones activas
-- **withdrawals**: Retiros solicitados
-- **notifications**: Sistema de notificaciones
-
-### Ejecutar schema:
-```sql
--- Ejecuta en Supabase SQL Editor
--- Contenido completo en: 00-CREAR-TABLAS.sql
-```
-
-## 🧪 Testing y Desarrollo
+## 🧪 Testing
 
 ```bash
-# Verificar conexión Supabase
+# Verify Supabase connection
 node scripts/verify-supabase.js
 
-# Desarrollo local
+# Run development server
 pnpm dev
 
-# Build de producción
+# Build for production
 pnpm build
-
-# Verificar build
-pnpm start
 ```
 
-## 📞 Soporte y Troubleshooting
+## 📞 Support
 
-### Problemas comunes:
-1. **Error de conexión**: Verifica variables en `.env.local`
-2. **Tablas no existen**: Ejecuta `00-CREAR-TABLAS.sql`
-3. **RLS bloqueando**: Usa service_role_key en APIs admin
-4. **Build fallando**: Revisa errores de TypeScript
+### Common Issues
 
-### Logs útiles:
+1. **Connection Error**: Check variables in `.env.local`
+2. **Tables don't exist**: Execute `00-CREAR-TABLAS.sql` in Supabase
+3. **RLS blocking**: Use service_role_key in admin APIs
+4. **Build failing**: Check TypeScript errors
+
+### Useful Logs
 - **Vercel**: Dashboard > Functions > View Logs
 - **Supabase**: Dashboard > Logs
 - **Browser**: F12 > Console/Network
 
-## 🤝 Contribuir
+## 🤝 Contributing
 
-1. Fork el proyecto
-2. Crea una rama: `git checkout -b feature/nueva-funcionalidad`
-3. Commit: `git commit -m 'Agregar nueva funcionalidad'`
-4. Push: `git push origin feature/nueva-funcionalidad`
-5. Abre un Pull Request
+1. Fork the project
+2. Create a feature branch: `git checkout -b feature/new-feature`
+3. Commit changes: `git commit -m 'Add new feature'`
+4. Push to branch: `git push origin feature/new-feature`
+5. Open a Pull Request
 
-## 📄 Licencia
+## 📄 License
 
-MIT License - ver [LICENSE](LICENSE) para más detalles.
+MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-**¿Necesitas ayuda?** Revisa la [guía de deployment](scripts/deploy-setup.md) o abre un issue.
+**Need help?** Check the deployment guides in the `scripts/` folder or open an issue.
 
-🚀 **¡Hecho con ❤️ para la comunidad de inversores!**
+🚀 **Made with ❤️ for the investment community!**
