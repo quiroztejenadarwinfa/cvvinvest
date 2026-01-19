@@ -424,16 +424,23 @@ export async function approveDeposit(depositId: string, notes?: string): Promise
 
   // Actualizar balance del usuario EN LOCALSTORAGE (respaldo)
   const users = getAllUsers()
+  console.log(`[approveDeposit] Buscando usuario por ID: ${deposit.userId} o email: ${deposit.userEmail}`)
   const user = users.find((u) => u.id === deposit.userId || u.email === deposit.userEmail)
+  
   if (user) {
+    console.log(`[approveDeposit] Usuario encontrado: ${user.email}`)
     user.balance += deposit.amount
     localStorage.setItem("cvvinvest_users", JSON.stringify(users))
+    console.log(`[approveDeposit] Balance actualizado a: ${user.balance}`)
 
     // Actualizar la sesión del usuario si está logueado
     const sessionUser = getSessionUser()
     if (sessionUser && (sessionUser.id === user.id || sessionUser.email === user.email)) {
+      console.log(`[approveDeposit] Actualizando sesión del usuario`)
       setSessionUser(user)
     }
+  } else {
+    console.error(`[approveDeposit] Usuario no encontrado`)
   }
 
   localStorage.setItem("cvvinvest_deposits", JSON.stringify(deposits))
@@ -458,8 +465,13 @@ export function rejectDeposit(depositId: string, notes?: string): boolean {
 export function getAllUsers(): User[] {
   if (typeof window === "undefined") return []
   const usersData = localStorage.getItem("cvvinvest_users")
-  if (!usersData) return []
-  return JSON.parse(usersData)
+  if (!usersData) {
+    console.warn(`[getAllUsers] No hay usuarios en localStorage`)
+    return []
+  }
+  const users = JSON.parse(usersData)
+  console.log(`[getAllUsers] Usuarios en BD: ${users.length}`, users.map((u: User) => ({email: u.email, plan: u.plan})))
+  return users
 }
 
 // Guardar todos los usuarios
@@ -651,55 +663,81 @@ export function getUserInvestments(): Investment[] {
 
 // Aprobar inversión
 export function approveInvestment(investmentId: string, notes?: string): boolean {
+  console.log(`[approveInvestment] Iniciando aprobación de inversión: ${investmentId}`)
+  
   const investments = getAllInvestments()
   const investment = investments.find((i) => i.id === investmentId)
 
-  if (!investment) return false
+  if (!investment) {
+    console.error(`[approveInvestment] Inversión no encontrada: ${investmentId}`)
+    return false
+  }
 
+  console.log(`[approveInvestment] Inversión encontrada:`, investment)
+  
   investment.status = "aprobado"
   investment.approvedAt = new Date().toISOString()
   investment.notes = notes
 
   // Restar del balance del usuario
   const users = getAllUsers()
+  console.log(`[approveInvestment] Buscando usuario por ID: ${investment.userId} o email: ${investment.userEmail}`)
+  console.log(`[approveInvestment] Usuarios en BD:`, users.map(u => ({id: u.id, email: u.email})))
+  
   const user = users.find((u) => u.id === investment.userId || u.email === investment.userEmail)
-  if (user) {
-    user.balance -= investment.amount
-    // Actualizar plan del usuario al plan de la inversión
-    // Normalizar nombre del plan: convertir a minúsculas, remover acentos
-    const normalizePlanName = (name: string): User["plan"] => {
-      const normalized = name
-        .toLowerCase()
-        .replace(/á/g, "a")
-        .replace(/é/g, "e")
-        .replace(/í/g, "i")
-        .replace(/ó/g, "o")
-        .replace(/ú/g, "u")
-        .trim()
-      
-      const planMap: Record<string, User["plan"]> = {
-        gratuito: "gratuito",
-        estandar: "estandar",
-        pro: "pro",
-        vip: "vip",
-        elite: "elite",
-      }
-      
-      return planMap[normalized] || user.plan
+  
+  if (!user) {
+    console.error(`[approveInvestment] Usuario no encontrado para inversión`)
+    localStorage.setItem("cvvinvest_investments", JSON.stringify(investments))
+    return false
+  }
+
+  console.log(`[approveInvestment] Usuario encontrado:`, user.email, user.plan)
+  
+  user.balance -= investment.amount
+  
+  // Actualizar plan del usuario al plan de la inversión
+  const normalizePlanName = (name: string): User["plan"] => {
+    const normalized = name
+      .toLowerCase()
+      .replace(/á/g, "a")
+      .replace(/é/g, "e")
+      .replace(/í/g, "i")
+      .replace(/ó/g, "o")
+      .replace(/ú/g, "u")
+      .trim()
+    
+    const planMap: Record<string, User["plan"]> = {
+      gratuito: "gratuito",
+      estandar: "estandar",
+      pro: "pro",
+      vip: "vip",
+      elite: "elite",
     }
     
-    user.plan = normalizePlanName(investment.planName)
-    localStorage.setItem("cvvinvest_users", JSON.stringify(users))
+    return planMap[normalized] || user.plan
+  }
+  
+  const newPlan = normalizePlanName(investment.planName)
+  console.log(`[approveInvestment] Plan actualizado de ${user.plan} a ${newPlan}`)
+  user.plan = newPlan
+  
+  localStorage.setItem("cvvinvest_users", JSON.stringify(users))
+  console.log(`[approveInvestment] Usuarios guardados en localStorage`)
 
-    // Actualizar la sesión del usuario si está logueado
-    const sessionUser = getSessionUser()
-    if (sessionUser && (sessionUser.id === user.id || sessionUser.email === user.email)) {
-      // Actualizar la sesión con el nuevo plan
-      setSessionUser(user)
-    }
+  // Actualizar la sesión del usuario si está logueado
+  const sessionUser = getSessionUser()
+  console.log(`[approveInvestment] Session user:`, sessionUser?.email)
+  
+  if (sessionUser && (sessionUser.id === user.id || sessionUser.email === user.email)) {
+    console.log(`[approveInvestment] Actualizando sesión del usuario`)
+    setSessionUser(user)
+  } else {
+    console.log(`[approveInvestment] No se actualiza sesión - session user no coincide o no existe`)
   }
 
   localStorage.setItem("cvvinvest_investments", JSON.stringify(investments))
+  console.log(`[approveInvestment] Inversión aprobada exitosamente`)
   return true
 }
 
