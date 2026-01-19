@@ -87,18 +87,19 @@ export async function loginWithSupabase(email: string, password: string) {
         return { success: true, error: null, user }
       }
 
-      // Si 404, crear usuario
+      // Si 404, crear usuario con el nuevo endpoint
       if (response.status === 404) {
-        const createResponse = await fetch("/api/auth/user", {
+        console.log("📝 Usuario no encontrado en BD, creando perfil...")
+        
+        const createResponse = await fetch("/api/auth/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            id: data.user.id,
+            userId: data.user.id,
             email: data.user.email,
             name: data.user.user_metadata?.full_name || data.user.email.split("@")[0],
             plan: "gratuito",
             balance: 0,
-            is_active: true,
           }),
         })
 
@@ -116,6 +117,10 @@ export async function loginWithSupabase(email: string, password: string) {
 
           setSessionUser(user)
           return { success: true, error: null, user }
+        } else {
+          const errorData = await createResponse.json()
+          console.error("❌ Error creando perfil:", errorData)
+          return { success: false, error: errorData.error || "Could not create user", user: null }
         }
       }
 
