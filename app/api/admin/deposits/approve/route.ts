@@ -76,9 +76,4 @@ export async function POST(request: NextRequest) {
     )
   }
 }
-    return NextResponse.json(
-      { error: error.message || 'Error interno del servidor' },
-      { status: 500 }
-    )
-  }
-}
+
