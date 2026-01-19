@@ -286,12 +286,16 @@ export default function AdminInvestmentPage() {
           read: false,
         })
         
-        // Si se debe cambiar el plan, actualizar el usuario
-        if (changePlanOnApprove && selectedPlanForChange) {
+        // Obtener plan sugerido automáticamente según el monto
+        const suggestedForAmount = getSuggestedPlansForInvestment(selectedInvestment.amount)
+        const planToUpdate = suggestedForAmount.length > 0 ? suggestedForAmount[suggestedForAmount.length - 1] : null
+        
+        // Si se debe cambiar el plan, actualizar el usuario automáticamente
+        if (planToUpdate) {
           const allUsers = getAllUsers()
           const updatedUsers = allUsers.map((u) =>
             u.email === selectedInvestment.userEmail
-              ? { ...u, plan: selectedPlanForChange }
+              ? { ...u, plan: planToUpdate }
               : u
           )
           setAllUsers(updatedUsers)
@@ -300,19 +304,19 @@ export default function AdminInvestmentPage() {
           createUserNotification(selectedInvestment.userEmail, {
             type: 'plan_change',
             title: 'Plan Actualizado',
-            message: `Tu plan fue actualizado a ${selectedPlanForChange.toUpperCase()} por inversión`,
+            message: `Tu plan fue actualizado a ${planToUpdate.toUpperCase()} por inversión`,
             details: {
               userId: selectedInvestment.userEmail,
               userName: selectedInvestment.userName,
               userEmail: selectedInvestment.userEmail,
               previousPlan: selectedInvestment.planName,
-              plan: selectedPlanForChange,
+              plan: planToUpdate,
             },
             read: false,
           })
 
           setMessage(
-            `✓ Inversión aprobada. Plan del usuario actualizado a ${selectedPlanForChange.toUpperCase()}`
+            `✓ Inversión aprobada. Plan del usuario actualizado a ${planToUpdate.toUpperCase()}`
           )
         } else {
           setMessage('✓ Inversión aprobada exitosamente. El saldo del usuario ha sido deducido.')
