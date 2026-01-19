@@ -672,6 +672,25 @@ export function rejectDeposit(depositId: string, notes?: string): boolean {
 }
 
 // Obtener todos los usuarios (para admin)
+// Obtener todos los usuarios (intentar Supabase primero, luego localStorage)
+export async function getAllUsersWithFallback(): Promise<User[]> {
+  // Primero intentar desde Supabase
+  const supabaseUsers = await getAllUsersSupabase()
+  if (supabaseUsers.length > 0) {
+    console.log(`[getAllUsersWithFallback] ${supabaseUsers.length} usuarios desde Supabase`)
+    return supabaseUsers
+  }
+  
+  // Si no hay en Supabase, usar localStorage como fallback
+  const localUsers = getAllUsers()
+  if (localUsers.length > 0) {
+    console.log(`[getAllUsersWithFallback] ${localUsers.length} usuarios desde localStorage (fallback)`)
+    return localUsers
+  }
+  
+  return []
+}
+
 export function getAllUsers(): User[] {
   if (typeof window === "undefined") return []
   const usersData = localStorage.getItem("cvvinvest_users")

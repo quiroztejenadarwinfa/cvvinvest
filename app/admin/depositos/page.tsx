@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { getSessionUser, clearSession, ADMIN_EMAIL, type User, getAllDeposits, approveDeposit, rejectDeposit, type Deposit } from "@/lib/auth"
+import { getSessionUser, clearSession, ADMIN_EMAIL, type User, getAllDeposits, approveDeposit, rejectDeposit, approveDepositSupabase, type Deposit } from "@/lib/auth"
 import { AdminSidebar } from "@/components/admin/sidebar"
 import { AdminHeader } from "@/components/admin/header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -114,11 +114,11 @@ export default function AdminDepositosPage() {
   const handleApprove = async () => {
     if (!selectedDeposit) return
 
-    const result = await approveDeposit(selectedDeposit.id, actionNotes)
+    const result = await approveDepositSupabase(selectedDeposit.id, actionNotes)
     if (result) {
       toast({
         title: "Éxito",
-        description: "Depósito aprobado. El saldo del usuario ha sido actualizado.",
+        description: "Depósito aprobado. El saldo del usuario ha sido actualizado en Supabase.",
       })
       loadDeposits()
       setIsActionDialogOpen(false)

@@ -7,6 +7,7 @@ import { Users, DollarSign, ArrowUpRight, ArrowDownLeft, AlertCircle, CheckCircl
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import type { User } from "@/lib/auth"
+import { getAllUsersSupabase } from "@/lib/auth"
 
 export function AdminOverview() {
   const [users, setUsers] = useState<User[]>([])
@@ -18,22 +19,43 @@ export function AdminOverview() {
   })
 
   useEffect(() => {
-    // Función para cargar y actualizar datos
-    const loadStats = () => {
-      const storedUsers = localStorage.getItem("cvvinvest_users")
-      if (storedUsers) {
-        const parsedUsers: User[] = JSON.parse(storedUsers)
-        console.log(`[AdminOverview] Usuarios cargados: ${parsedUsers.length}`)
-        setUsers(parsedUsers)
-        setStats({
-          totalUsers: parsedUsers.length,
-          totalDeposits: parsedUsers.reduce((acc, u) => acc + u.balance, 0),
-          totalWithdrawals: 0,
-          pendingWithdrawals: 0,
-        })
-      } else {
-        console.warn("[AdminOverview] No hay usuarios en localStorage")
-        setUsers([])
+    // Función para cargar y actualizar datos desde Supabase
+    const loadStats = async () => {
+      try {
+        const supabaseUsers = await getAllUsersSupabase()
+        console.log(`[AdminOverview] Usuarios desde Supabase: ${supabaseUsers.length}`)
+        
+        if (supabaseUsers.length > 0) {
+          setUsers(supabaseUsers)
+          setStats({
+            totalUsers: supabaseUsers.length,
+            totalDeposits: supabaseUsers.reduce((acc, u: any) => acc + (u.balance || 0), 0),
+            totalWithdrawals: 0,
+            pendingWithdrawals: 0,
+          })
+        } else {
+          // Fallback a localStorage
+          const storedUsers = localStorage.getItem("cvvinvest_users")
+          if (storedUsers) {
+            const parsedUsers: User[] = JSON.parse(storedUsers)
+            console.log(`[AdminOverview] Usuarios desde localStorage (fallback): ${parsedUsers.length}`)
+            setUsers(parsedUsers)
+            setStats({
+              totalUsers: parsedUsers.length,
+              totalDeposits: parsedUsers.reduce((acc, u) => acc + u.balance, 0),
+              totalWithdrawals: 0,
+              pendingWithdrawals: 0,
+            })
+          }
+        }
+      } catch (error) {
+        console.error('[AdminOverview] Error loading stats:', error)
+        // Fallback a localStorage
+        const storedUsers = localStorage.getItem("cvvinvest_users")
+        if (storedUsers) {
+          const parsedUsers: User[] = JSON.parse(storedUsers)
+          setUsers(parsedUsers)
+        }
       }
     }
     
