@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { id, email, name, plan, balance, is_active, password } = body
+    const { id, email, name, plan, balance, is_active } = body
 
     console.log("🔐 API POST: Request body:", { id, email, name, plan, balance, is_active })
 
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
         id,
         email,
         name: name || email.split("@")[0],
-        password_hash: password || "temp_hash", // Usar password si viene, o temporal
+        password_hash: "auth_managed", // Marca que la contraseña es manejada por Supabase Auth
         plan: plan || "gratuito",
         balance: parseFloat(String(balance)) || 0,
         is_active: is_active !== false,
