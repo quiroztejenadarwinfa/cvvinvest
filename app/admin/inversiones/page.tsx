@@ -286,40 +286,24 @@ export default function AdminInvestmentPage() {
           read: false,
         })
         
-        // Actualizar al plan que el usuario solicitó en la inversión
-        const planToUpdate = selectedInvestment.planName as PlanType
-        
-        // Actualizar el usuario con el plan que solicitó
-        if (planToUpdate) {
-          const allUsers = getAllUsers()
-          const updatedUsers = allUsers.map((u) =>
-            u.email === selectedInvestment.userEmail
-              ? { ...u, plan: planToUpdate }
-              : u
-          )
-          setAllUsers(updatedUsers)
-          
-          // Crear notificación de cambio de plan
-          createUserNotification(selectedInvestment.userEmail, {
-            type: 'plan_change',
-            title: 'Plan Actualizado',
-            message: `Tu plan fue actualizado a ${planToUpdate.toUpperCase()} por inversión`,
-            details: {
-              userId: selectedInvestment.userEmail,
-              userName: selectedInvestment.userName,
-              userEmail: selectedInvestment.userEmail,
-              previousPlan: selectedInvestment.planName,
-              plan: planToUpdate,
-            },
-            read: false,
-          })
+        // Crear notificación de cambio de plan (ya se actualiza en approveInvestment)
+        createUserNotification(selectedInvestment.userEmail, {
+          type: 'plan_change',
+          title: 'Plan Actualizado',
+          message: `Tu plan fue actualizado a ${selectedInvestment.planName.toUpperCase()} por inversión`,
+          details: {
+            userId: selectedInvestment.userEmail,
+            userName: selectedInvestment.userName,
+            userEmail: selectedInvestment.userEmail,
+            previousPlan: selectedInvestment.planName,
+            plan: selectedInvestment.planName,
+          },
+          read: false,
+        })
 
-          setMessage(
-            `✓ Inversión aprobada. Plan del usuario actualizado a ${planToUpdate.toUpperCase()}`
-          )
-        } else {
-          setMessage('✓ Inversión aprobada exitosamente. El saldo del usuario ha sido deducido.')
-        }
+        setMessage(
+          `✓ Inversión aprobada. Plan del usuario actualizado a ${selectedInvestment.planName.toUpperCase()}`
+        )
       } else {
         rejectInvestment(selectedInvestment.id, actionNotes)
         
