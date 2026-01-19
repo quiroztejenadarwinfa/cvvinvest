@@ -286,11 +286,10 @@ export default function AdminInvestmentPage() {
           read: false,
         })
         
-        // Obtener plan sugerido automáticamente según el monto
-        const suggestedForAmount = getSuggestedPlansForInvestment(selectedInvestment.amount)
-        const planToUpdate = suggestedForAmount.length > 0 ? suggestedForAmount[suggestedForAmount.length - 1] : null
+        // Actualizar al plan que el usuario solicitó en la inversión
+        const planToUpdate = selectedInvestment.planName as PlanType
         
-        // Si se debe cambiar el plan, actualizar el usuario automáticamente
+        // Actualizar el usuario con el plan que solicitó
         if (planToUpdate) {
           const allUsers = getAllUsers()
           const updatedUsers = allUsers.map((u) =>
