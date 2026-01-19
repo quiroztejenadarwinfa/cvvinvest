@@ -205,7 +205,37 @@ CREATE TRIGGER chat_sessions_updated_at BEFORE UPDATE ON public.chat_sessions
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================
+-- PASO 10: INSERTAR SOLO EL ADMIN (INICIO LIMPIO)
+-- ============================================
+
+INSERT INTO public.users (
+  id,
+  email,
+  name,
+  password_hash,
+  plan,
+  balance,
+  role,
+  is_active,
+  created_at,
+  updated_at
+) VALUES (
+  gen_random_uuid(),
+  'exe.main.darwin@gmail.com',
+  'Administrador',
+  '$2a$10$YIjlrPNoS9cHWa0vHemH2OPST9/PgBkqquzi.Oy1D3pK7K5b7Z8NO', -- admin12345 (bcrypt hash)
+  'elite',
+  999999.99,
+  'admin',
+  true,
+  NOW(),
+  NOW()
+);
+
+-- ============================================
 -- ✅ SCRIPT COMPLETADO
 -- ============================================
--- La base de datos está lista para usar.
--- Ahora ejecuta el script: 02-seed-data.sql
+-- ✅ Base de datos recreada desde cero
+-- ✅ Solo existe el admin: exe.main.darwin@gmail.com / admin12345
+-- ✅ Admin tiene plan ELITE y balance de $999,999.99
+-- ✅ Listo para comenzar
