@@ -424,14 +424,14 @@ export async function approveDeposit(depositId: string, notes?: string): Promise
 
   // Actualizar balance del usuario EN LOCALSTORAGE (respaldo)
   const users = getAllUsers()
-  const user = users.find((u) => u.id === deposit.userId)
+  const user = users.find((u) => u.id === deposit.userId || u.email === deposit.userEmail)
   if (user) {
     user.balance += deposit.amount
     localStorage.setItem("cvvinvest_users", JSON.stringify(users))
 
-    // NO actualizar la sesión del admin - solo actualizar si es el usuario normal el que está logueado
+    // Actualizar la sesión del usuario si está logueado
     const sessionUser = getSessionUser()
-    if (sessionUser && sessionUser.id === user.id && sessionUser.email !== ADMIN_EMAIL) {
+    if (sessionUser && (sessionUser.id === user.id || sessionUser.email === user.email)) {
       setSessionUser(user)
     }
   }
@@ -662,7 +662,7 @@ export function approveInvestment(investmentId: string, notes?: string): boolean
 
   // Restar del balance del usuario
   const users = getAllUsers()
-  const user = users.find((u) => u.id === investment.userId)
+  const user = users.find((u) => u.id === investment.userId || u.email === investment.userEmail)
   if (user) {
     user.balance -= investment.amount
     // Actualizar plan del usuario al plan de la inversión
@@ -691,9 +691,10 @@ export function approveInvestment(investmentId: string, notes?: string): boolean
     user.plan = normalizePlanName(investment.planName)
     localStorage.setItem("cvvinvest_users", JSON.stringify(users))
 
-    // NO actualizar la sesión del admin - solo actualizar si es el usuario normal el que está logueado
+    // Actualizar la sesión del usuario si está logueado
     const sessionUser = getSessionUser()
-    if (sessionUser && sessionUser.id === user.id && sessionUser.email !== ADMIN_EMAIL) {
+    if (sessionUser && (sessionUser.id === user.id || sessionUser.email === user.email)) {
+      // Actualizar la sesión con el nuevo plan
       setSessionUser(user)
     }
   }
