@@ -60,18 +60,34 @@ export async function POST(request: NextRequest) {
       console.error("   Hint:", error.hint)
 
       // Si es duplicado, obtener el usuario existente
-      if (error.code === "23505" || error.message.includes("duplicate")) {
-        console.log("ℹ️ [register] User already exists, fetching...")
-        const { data: existing } = await supabase
+      if (error.code === "23505" || error.message.includes("duplicate") || error.message.includes("unique")) {
+        console.log("ℹ️ [register] Duplicate detected, searching for existing user...")
+        
+        // Primero intentar por email
+        const { data: existingByEmail } = await supabase
+          .from("users")
+          .select("*")
+          .eq("email", email)
+          .single()
+
+        if (existingByEmail) {
+          console.log("✅ [register] Found user by email, returning...")
+          return NextResponse.json(existingByEmail)
+        }
+
+        // Si no por email, intentar por ID
+        const { data: existingById } = await supabase
           .from("users")
           .select("*")
           .eq("id", userId)
           .single()
 
-        if (existing) {
-          console.log("✅ [register] Returning existing user")
-          return NextResponse.json(existing)
+        if (existingById) {
+          console.log("✅ [register] Found user by ID, returning...")
+          return NextResponse.json(existingById)
         }
+
+        console.error("❌ Duplicate detected but could not find user")
       }
 
       return NextResponse.json(

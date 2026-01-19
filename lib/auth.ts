@@ -69,7 +69,8 @@ export async function loginWithSupabase(email: string, password: string) {
 
     // Obtener datos del usuario via API (ignora RLS con service_role key)
     try {
-      const response = await fetch(`/api/auth/user?id=${data.user.id}`)
+      // Intentar obtener por email primero
+      const response = await fetch(`/api/auth/user?email=${encodeURIComponent(data.user.email)}`)
       
       if (response.ok) {
         const userData = await response.json()

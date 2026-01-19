@@ -16,27 +16,32 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get("id")
+    const email = searchParams.get("email")
 
-    if (!userId) {
-      return NextResponse.json({ error: "User ID required" }, { status: 400 })
+    if (!userId && !email) {
+      return NextResponse.json({ error: "User ID or email required" }, { status: 400 })
     }
 
-    console.log("🔐 API GET: Fetching user:", userId)
+    console.log("🔐 API GET: Fetching user:", { userId, email })
 
-    // Usar select(*) sin single() para mejor manejo de errores
-    const { data, error } = await supabase
-      .from("users")
-      .select("*")
-      .eq("id", userId)
+    let query = supabase.from("users").select("*")
+    
+    if (userId) {
+      query = query.eq("id", userId)
+    } else if (email) {
+      query = query.eq("email", email)
+    }
+
+    const { data, error } = await query
 
     if (error) {
-      console.error("❌ API GET: Error fetching user:", error.message, error.details)
+      console.error("❌ API GET: Error fetching user:", error.message)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
     // Si no hay datos, retornar 404
     if (!data || data.length === 0) {
-      console.log("⚠️ API GET: User not found, will need to create")
+      console.log("⚠️ API GET: User not found")
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
