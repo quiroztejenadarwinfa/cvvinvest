@@ -64,12 +64,16 @@ export async function POST(request: NextRequest) {
 
     console.log("🔐 API POST: Creating user:", email)
 
+    // Hash dummy para password_hash (no se usa con Supabase Auth)
+    const dummyHash = '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcg7b3XeKeUxWdeS86E36DvJ32e'
+
     const { data, error } = await supabase
       .from("users")
       .insert({
         id,
         email,
         name: name || email.split("@")[0],
+        password_hash: dummyHash,
         plan: plan || "gratuito",
         balance: parseFloat(String(balance)) || 0,
         is_active: is_active !== false,
@@ -80,6 +84,7 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error("❌ API POST: Error creating user:", error.code, error.message, error.details, error.hint)
+      console.error("📊 Full error object:", JSON.stringify(error, null, 2))
       
       // Si es un conflicto (usuario ya existe), intentar obtenerlo
       if (error.code === "23505" || error.message.includes("duplicate") || error.message.includes("Duplicate key")) {

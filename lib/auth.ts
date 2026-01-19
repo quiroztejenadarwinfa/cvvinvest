@@ -169,39 +169,52 @@ export async function registerWithSupabase(
 
     // Crear registro en tabla users via API route (con service_role, no sujeto a RLS)
     try {
-      const response = await fetch("/api/auth/user", {
+    // Crear registro en tabla users via API route NUEVO
+    try {
+      console.log("🔐 Registrando en tabla users:", {
+        userId: data.user.id,
+        email: data.user.email,
+        name: name
+      })
+      
+      const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          id: data.user.id,
+          userId: data.user.id,
           email: data.user.email,
           name: name,
           plan: "gratuito",
           balance: 0,
-          is_active: true,
         }),
       })
 
+      const responseData = await response.json()
+
       if (!response.ok) {
-        const errorData = await response.json()
-        return { success: false, error: errorData.error || "Failed to create user", user: null }
+        console.error("❌ API register error:", responseData)
+        return { success: false, error: responseData.error || "Failed to create user profile", user: null }
       }
+
+      console.log("✅ User profile created successfully")
+      
+      const user: User = {
+        id: responseData.id,
+        email: responseData.email,
+        name: responseData.name || "",
+        plan: responseData.plan || "gratuito",
+        balance: responseData.balance || 0,
+        createdAt: new Date(responseData.created_at),
+      }
+
+      setSessionUser(user)
+      return { success: true, error: null, user }
     } catch (apiError: any) {
+      console.error("❌ Profile creation error:", apiError.message)
       return { success: false, error: apiError.message, user: null }
     }
-
-    const user: User = {
-      id: data.user.id,
-      email: data.user.email || email,
-      name: name,
-      plan: "gratuito",
-      balance: 0,
-      createdAt: new Date(),
-    }
-
-    setSessionUser(user)
-    return { success: true, error: null, user }
   } catch (error: any) {
+    console.error("❌ Registration error:", error.message)
     return { success: false, error: error.message, user: null }
   }
 }
