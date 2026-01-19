@@ -33,7 +33,7 @@ const nextConfig = {
           },
           {
             key: "Content-Security-Policy",
-            value: "default-src 'self'; connect-src 'self' https://uofardoxcfxdzajcrzxh.supabase.co https://vercel.live wss://uofardoxcfxdzajcrzxh.supabase.co; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://vercel.live; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; object-src 'none'; base-uri 'self'; frame-src 'self' https://vercel.live; frame-ancestors 'none'; form-action 'self'",
+            value: "default-src 'self'; connect-src 'self' https://ydrvhjpobsfvebexfkbj.supabase.co https://vercel.live wss://ydrvhjpobsfvebexfkbj.supabase.co; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://vercel.live; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; object-src 'none'; base-uri 'self'; frame-src 'self' https://vercel.live; frame-ancestors 'none'; form-action 'self'",
           },
           {
             key: "Strict-Transport-Security",
