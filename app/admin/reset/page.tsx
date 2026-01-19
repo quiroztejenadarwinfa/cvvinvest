@@ -32,21 +32,31 @@ export default function ResetPage() {
     setLoading(true)
     setError(null)
     try {
-      // Resetear datos en Supabase
-      const { success: supabaseSuccess, error: supabaseError } = await resetAllUserDataSupabase(ADMIN_EMAIL)
-      
-      if (!supabaseSuccess) {
-        throw new Error(supabaseError || "Error al resetear datos de Supabase")
+      // Llamar al endpoint de reset
+      const response = await fetch("/api/admin/reset", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          adminEmail: ADMIN_EMAIL,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Error al resetear")
       }
 
-      // Resetear datos en localStorage
+      // Limpiar localStorage local
       resetAllData()
       clearSession()
       
       setSuccess(true)
       toast({
-        title: "Reset Completado",
-        description: "Todos los datos de usuarios han sido eliminados (excepto admin)",
+        title: "Reset Completado ✅",
+        description: "Base de datos reseteada. Solo existe el admin. Redirigiendo...",
       })
       
       await new Promise((resolve) => setTimeout(resolve, 2000))
