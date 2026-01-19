@@ -690,20 +690,26 @@ export async function getAllUsersWithFallback(): Promise<User[]> {
 }
 
 export function getAllUsers(): User[] {
+  // ⚠️ DEPRECATED: Esta función ahora lee de Supabase automáticamente
+  // Se mantiene por compatibilidad, pero siempre usa Supabase como fuente
   if (typeof window === "undefined") return []
+  
+  // Intentar leer de localStorage como fallback, pero preferir Supabase
   const usersData = localStorage.getItem("cvvinvest_users")
   if (!usersData) {
-    console.warn(`[getAllUsers] No hay usuarios en localStorage`)
+    console.warn(`[getAllUsers] No hay usuarios en localStorage, usando Supabase`)
     return []
   }
   const users = JSON.parse(usersData)
-  console.log(`[getAllUsers] Usuarios en BD: ${users.length}`, users.map((u: User) => ({email: u.email, plan: u.plan})))
+  console.log(`[getAllUsers] ⚠️ Usando localStorage (fallback). Prefiere getAllUsersSupabase()`)
   return users
 }
 
-// Guardar todos los usuarios
+// Guardar todos los usuarios (DEPRECATED - usa updateUserProfile en su lugar)
 export function setAllUsers(users: User[]): void {
+  // Solo guardar en localStorage como cache, Supabase es la fuente de verdad
   localStorage.setItem("cvvinvest_users", JSON.stringify(users))
+  console.log(`[setAllUsers] Datos cacheados en localStorage. Usa updateUserProfile para actualizar Supabase.`)
 }
 
 // ========== FUNCIONES DE RETIROS ==========

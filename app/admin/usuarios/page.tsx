@@ -90,17 +90,11 @@ export default function AdminUsuariosPage() {
     try {
       console.log("🔄 Loading users from Supabase...")
       
-      // Obtener usuarios de Supabase
+      // Obtener usuarios SIEMPRE de Supabase (fuente de verdad)
       const allUsers = await getAllUsersSupabase()
       console.log("✅ Users loaded from Supabase:", { count: allUsers.length, users: allUsers })
       
-      if (allUsers && allUsers.length > 0) {
-        setUsers(allUsers)
-      } else {
-        console.warn("⚠️ No users in Supabase, trying localStorage...")
-        const localUsers = getAllUsers()
-        setUsers(localUsers)
-      }
+      setUsers(allUsers)
     } catch (error) {
       console.error('❌ Error loading users:', error)
       toast({
@@ -211,13 +205,8 @@ export default function AdminUsuariosPage() {
         throw new Error(error)
       }
 
-      // Actualizar en localStorage y estado local
-      const updatedUsers = users.map((u) =>
-        u.id === selectedUserForPlan.id ? { ...u, plan: newPlanValue as PlanType } : u
-      )
-
-      setAllUsers(updatedUsers)
-      setUsers(updatedUsers)
+      // Recargar usuarios de Supabase (fuente de verdad)
+      await loadUsers()
 
       // Solo crear notificación para el admin (usuario no recibe estas)
       createAdminNotification({
@@ -280,21 +269,8 @@ export default function AdminUsuariosPage() {
         throw new Error(error)
       }
 
-      // Actualizar en localStorage y estado local
-      const updatedUsers = users.map((u) => {
-        if (u.id === editingUser.id) {
-          return {
-            ...u,
-            name: editForm.name,
-            plan: editForm.plan as PlanType,
-            balance: editForm.balance,
-          }
-        }
-        return u
-      })
-
-      setAllUsers(updatedUsers)
-      setUsers(updatedUsers)
+      // Recargar usuarios de Supabase (fuente de verdad)
+      await loadUsers()
       setEditingUser(null)
 
       toast({
@@ -311,15 +287,25 @@ export default function AdminUsuariosPage() {
     }
   }
 
-  const deleteUser = (userId: string) => {
-    const updatedUsers = users.filter((u) => u.id !== userId)
-    setAllUsers(updatedUsers)
-    setUsers(updatedUsers)
+  const deleteUser = async (userId: string) => {
+    try {
+      // Desactivar en Supabase
+      await updateUserProfile(userId, { is_active: false })
+      
+      // Recargar usuarios de Supabase
+      await loadUsers()
 
-    toast({
-      title: "Usuario eliminado",
-      description: "El usuario ha sido eliminado de la plataforma.",
-    })
+      toast({
+        title: "Usuario desactivado",
+        description: "El usuario ha sido desactivado correctamente.",
+      })
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "No se pudo desactivar el usuario",
+        variant: "destructive",
+      })
+    }
   }
 
   const getPlanStats = () => {
