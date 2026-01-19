@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { getSessionUser, clearSession, ADMIN_EMAIL, type User, getAllUsers, setAllUsers } from "@/lib/auth"
-import { getAllUsersFromDB, approveUser, deactivateUser } from "@/lib/auth-supabase"
+import { approveUser, deactivateUser } from "@/lib/auth-supabase"
 import { createUserNotification, createAdminNotification } from "@/lib/notifications"
 import { getPlanFeatures, type PlanType } from "@/lib/plan-features"
 import { AdminSidebar } from "@/components/admin/sidebar"
@@ -88,32 +88,30 @@ export default function AdminUsuariosPage() {
 
   const loadUsers = async () => {
     try {
-      console.log("🔄 Loading users from admin panel...")
-      const { users: dbUsers, error } = await getAllUsersFromDB()
+      console.log("🔄 Loading users from admin panel (via API)...")
       
-      console.log("Admin panel received:", { dbUsers, error, count: dbUsers?.length })
+      // Usar API route con service_role en lugar de SELECT directo
+      const response = await fetch("/api/users-admin")
+      const result = await response.json()
       
-      if (error) {
-        console.error("Error from getAllUsersFromDB:", error)
-        toast({
-          title: "Error",
-          description: `Error al cargar usuarios: ${error}`,
-          variant: "destructive"
-        })
+      console.log("Admin panel received:", { data: result.data, count: result.count })
+      
+      if (!response.ok) {
+        throw new Error(result.error || "Error al cargar usuarios")
       }
       
-      if (dbUsers && dbUsers.length > 0) {
-        console.log("✅ Setting users state:", dbUsers)
-        setUsers(dbUsers)
+      if (result.data && result.data.length > 0) {
+        console.log("✅ Setting users state:", result.data)
+        setUsers(result.data)
       } else {
-        console.warn("⚠️ No users returned from Supabase")
+        console.warn("⚠️ No users returned")
         setUsers([])
       }
     } catch (error) {
       console.error('❌ Error loading users in admin panel:', error)
       toast({
         title: "Error",
-        description: "Error al cargar usuarios de la base de datos",
+        description: error instanceof Error ? error.message : "Error al cargar usuarios de la base de datos",
         variant: "destructive"
       })
     }
