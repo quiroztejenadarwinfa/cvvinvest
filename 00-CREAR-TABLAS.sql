@@ -3,8 +3,15 @@
 -- Ejecuta este script en tu editor SQL de Supabase
 -- =============================================
 
+-- LIMPIAR TABLAS EXISTENTES (si existen)
+DROP TABLE IF EXISTS notifications CASCADE;
+DROP TABLE IF EXISTS withdrawals CASCADE;
+DROP TABLE IF EXISTS investments CASCADE;
+DROP TABLE IF EXISTS deposits CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+
 -- 1. TABLA USERS
-CREATE TABLE IF NOT EXISTS users (
+CREATE TABLE users (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   email VARCHAR(255) UNIQUE NOT NULL,
   name VARCHAR(255) NOT NULL,
@@ -17,7 +24,7 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 -- 2. TABLA DEPOSITS
-CREATE TABLE IF NOT EXISTS deposits (
+CREATE TABLE deposits (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   email VARCHAR(255) NOT NULL,
@@ -32,7 +39,7 @@ CREATE TABLE IF NOT EXISTS deposits (
 );
 
 -- 3. TABLA INVESTMENTS
-CREATE TABLE IF NOT EXISTS investments (
+CREATE TABLE investments (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   email VARCHAR(255) NOT NULL,
@@ -49,7 +56,7 @@ CREATE TABLE IF NOT EXISTS investments (
 );
 
 -- 4. TABLA WITHDRAWALS
-CREATE TABLE IF NOT EXISTS withdrawals (
+CREATE TABLE withdrawals (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   email VARCHAR(255) NOT NULL,
@@ -65,7 +72,7 @@ CREATE TABLE IF NOT EXISTS withdrawals (
 );
 
 -- 5. TABLA NOTIFICATIONS
-CREATE TABLE IF NOT EXISTS notifications (
+CREATE TABLE notifications (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   type VARCHAR(100) NOT NULL,
