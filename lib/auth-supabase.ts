@@ -54,6 +54,7 @@ export async function signUpWithEmail(
             id: data.user.id,
             email: data.user.email,
             name: name,
+            password: password,
             plan: "gratuito",
             balance: 0,
             is_active: true,
