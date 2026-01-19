@@ -38,17 +38,19 @@ export interface Deposit {
 // Obtener todos los usuarios desde Supabase
 export async function getAllUsersSupabase(): Promise<User[]> {
   try {
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
+    // Usar API endpoint que usa service_role key (no está bloqueado por RLS)
+    const response = await fetch('/api/users-admin')
     
-    if (error) {
-      console.error('[Supabase] Error al obtener usuarios:', error)
+    if (!response.ok) {
+      console.error('[Supabase] API error:', response.status)
       return []
     }
     
-    console.log(`[Supabase] Usuarios obtenidos: ${data?.length || 0}`)
-    return data || []
+    const result = await response.json()
+    const users = result.data || []
+    
+    console.log(`[Supabase] Usuarios obtenidos: ${users?.length || 0}`)
+    return users || []
   } catch (error) {
     console.error('[Supabase] Exception al obtener usuarios:', error)
     return []
@@ -58,17 +60,19 @@ export async function getAllUsersSupabase(): Promise<User[]> {
 // Obtener inversiones desde Supabase
 export async function getAllInvestmentsSupabase(): Promise<any[]> {
   try {
-    const { data, error } = await supabase
-      .from('investments')
-      .select('*')
+    // Usar API endpoint que usa service_role key (no está bloqueado por RLS)
+    const response = await fetch('/api/investments-admin')
     
-    if (error) {
-      console.error('[Supabase] Error al obtener inversiones:', error)
+    if (!response.ok) {
+      console.error('[Supabase] API error:', response.status)
       return []
     }
     
-    console.log(`[Supabase] Inversiones obtenidas: ${data?.length || 0}`)
-    return data || []
+    const result = await response.json()
+    const investments = result.data || []
+    
+    console.log(`[Supabase] Inversiones obtenidas: ${investments?.length || 0}`)
+    return investments || []
   } catch (error) {
     console.error('[Supabase] Exception al obtener inversiones:', error)
     return []
