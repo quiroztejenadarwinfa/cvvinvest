@@ -39,13 +39,13 @@ export default function RetirosPage() {
     loadWithdrawals()
     setLoading(false)
 
-    // Recargar el usuario cada 2 segundos para obtener cambios de plan
+    // Recargar el usuario cada 1 segundo para obtener cambios de plan
     const interval = setInterval(() => {
       const updatedUser = getSessionUser()
       if (updatedUser) {
         setUser(updatedUser)
       }
-    }, 2000)
+    }, 1000)
 
     return () => clearInterval(interval)
   }, [router])

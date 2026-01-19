@@ -58,7 +58,7 @@ export default function DashboardPage() {
       if (updatedUser) {
         setUser(updatedUser)
       }
-    }, 2000)
+    }, 1000)
     
     return () => clearInterval(interval)
   }, [user])
