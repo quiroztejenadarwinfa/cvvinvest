@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
         id,
         email,
         name: name || email.split("@")[0],
-        password_hash: "auth_managed", // Marca que la contraseña es manejada por Supabase Auth
+        password_hash: "managed_by_supabase_auth", // Contraseña manejada por Supabase Auth
         plan: plan || "gratuito",
         balance: parseFloat(String(balance)) || 0,
         is_active: is_active !== false,
