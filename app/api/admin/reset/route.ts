@@ -125,16 +125,7 @@ export async function POST(request: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY || ""
     )
 
-    // Ejecutar SQL
-    const { error } = await supabase.rpc("sql", {
-      query: RESET_DB_SQL,
-    }).catch(() => {
-      // Si rpc falla, intentar con query directa
-      return supabase.from("users").select().limit(1)
-    })
-
-    // Si no hay RPC, ejecutar manualmente cada comando
-    // Truncar tablas
+    // Truncar tablas (eliminar todos excepto admin)
     await supabase.from("notifications").delete().neq("id", "00000000-0000-0000-0000-000000000000")
     await supabase.from("chat_messages").delete().neq("id", "00000000-0000-0000-0000-000000000000")
     await supabase.from("chat_sessions").delete().neq("id", "00000000-0000-0000-0000-000000000000")
