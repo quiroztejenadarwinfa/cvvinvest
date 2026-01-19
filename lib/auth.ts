@@ -147,6 +147,26 @@ export async function registerWithSupabase(
 
     if (!data.user) return { success: false, error: "User creation failed", user: null }
 
+    // Confirmar email automáticamente via API (para que el usuario pueda iniciar sesión inmediatamente)
+    try {
+      const confirmResponse = await fetch("/api/auth/confirm-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: data.user.id,
+        }),
+      })
+
+      if (!confirmResponse.ok) {
+        console.warn("⚠️ Could not auto-confirm email, but user registration continues")
+      } else {
+        console.log("✅ Email auto-confirmed for user:", data.user.id)
+      }
+    } catch (confirmError: any) {
+      console.warn("⚠️ Email confirmation error:", confirmError.message)
+      // No fallar el registro si la confirmación automática falla
+    }
+
     // Crear registro en tabla users via API route (con service_role, no sujeto a RLS)
     try {
       const response = await fetch("/api/auth/user", {
