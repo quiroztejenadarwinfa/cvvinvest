@@ -18,18 +18,34 @@ export function AdminOverview() {
   })
 
   useEffect(() => {
-    // Cargar usuarios del localStorage
-    const storedUsers = localStorage.getItem("cvvinvest_users")
-    if (storedUsers) {
-      const parsedUsers: User[] = JSON.parse(storedUsers)
-      setUsers(parsedUsers)
-      setStats({
-        totalUsers: parsedUsers.length,
-        totalDeposits: parsedUsers.reduce((acc, u) => acc + u.balance, 0),
-        totalWithdrawals: 0,
-        pendingWithdrawals: 0,
-      })
+    // Función para cargar y actualizar datos
+    const loadStats = () => {
+      const storedUsers = localStorage.getItem("cvvinvest_users")
+      if (storedUsers) {
+        const parsedUsers: User[] = JSON.parse(storedUsers)
+        console.log(`[AdminOverview] Usuarios cargados: ${parsedUsers.length}`)
+        setUsers(parsedUsers)
+        setStats({
+          totalUsers: parsedUsers.length,
+          totalDeposits: parsedUsers.reduce((acc, u) => acc + u.balance, 0),
+          totalWithdrawals: 0,
+          pendingWithdrawals: 0,
+        })
+      } else {
+        console.warn("[AdminOverview] No hay usuarios en localStorage")
+        setUsers([])
+      }
     }
+    
+    // Cargar al montar
+    loadStats()
+    
+    // Actualizar cada 1 segundo para tiempo real
+    const interval = setInterval(() => {
+      loadStats()
+    }, 1000)
+    
+    return () => clearInterval(interval)
   }, [])
 
   return (

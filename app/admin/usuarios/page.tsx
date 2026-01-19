@@ -78,40 +78,33 @@ export default function AdminUsuariosPage() {
     }
     initialLoad()
     
-    // Recargar usuarios cada 5 segundos (actualizaciones en tiempo real)
+    // Recargar usuarios cada 1 segundo (actualizaciones en tiempo real)
     const interval = setInterval(() => {
       loadUsers()
-    }, 5000)
+    }, 1000)
 
     return () => clearInterval(interval)
   }, [router])
 
   const loadUsers = async () => {
     try {
-      console.log("🔄 Loading users from admin panel (via API)...")
+      console.log("🔄 Loading users from localStorage...")
       
-      // Usar API route con service_role en lugar de SELECT directo
-      const response = await fetch("/api/users-admin")
-      const result = await response.json()
+      // Obtener usuarios de localStorage
+      const allUsers = getAllUsers()
+      console.log("✅ Users loaded:", { count: allUsers.length, users: allUsers })
       
-      console.log("Admin panel received:", { data: result.data, count: result.count })
-      
-      if (!response.ok) {
-        throw new Error(result.error || "Error al cargar usuarios")
-      }
-      
-      if (result.data && result.data.length > 0) {
-        console.log("✅ Setting users state:", result.data)
-        setUsers(result.data)
+      if (allUsers && allUsers.length > 0) {
+        setUsers(allUsers)
       } else {
-        console.warn("⚠️ No users returned")
+        console.warn("⚠️ No users in localStorage")
         setUsers([])
       }
     } catch (error) {
-      console.error('❌ Error loading users in admin panel:', error)
+      console.error('❌ Error loading users:', error)
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Error al cargar usuarios de la base de datos",
+        description: "Error al cargar usuarios del almacenamiento local",
         variant: "destructive"
       })
     }
