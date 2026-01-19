@@ -167,8 +167,6 @@ export async function registerWithSupabase(
       // No fallar el registro si la confirmación automática falla
     }
 
-    // Crear registro en tabla users via API route (con service_role, no sujeto a RLS)
-    try {
     // Crear registro en tabla users via API route NUEVO
     try {
       console.log("🔐 Registrando en tabla users:", {
