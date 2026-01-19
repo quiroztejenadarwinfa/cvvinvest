@@ -49,7 +49,7 @@ ALTER TABLE public.deposits ENABLE ROW LEVEL SECURITY;
 -- Usuarios ven sus propios depósitos
 CREATE POLICY "Users see own deposits"
   ON public.deposits FOR SELECT
-  USING (auth.uid() = userId::uuid);
+  USING (auth.uid() = user_id::uuid);
 
 -- Admin ve todos los depósitos
 CREATE POLICY "Admin sees all deposits"
@@ -61,7 +61,7 @@ CREATE POLICY "Admin sees all deposits"
 -- Usuarios crean sus depósitos
 CREATE POLICY "Users create own deposits"
   ON public.deposits FOR INSERT
-  WITH CHECK (auth.uid() = userId::uuid);
+  WITH CHECK (auth.uid() = user_id::uuid);
 
 -- Admin actualiza depósitos
 CREATE POLICY "Admin updates deposits"
@@ -76,7 +76,7 @@ ALTER TABLE public.investments ENABLE ROW LEVEL SECURITY;
 -- Usuarios ven sus inversiones
 CREATE POLICY "Users see own investments"
   ON public.investments FOR SELECT
-  USING (auth.uid() = userId::uuid);
+  USING (auth.uid() = user_id::uuid);
 
 -- Admin ve todas las inversiones
 CREATE POLICY "Admin sees all investments"
@@ -88,7 +88,7 @@ CREATE POLICY "Admin sees all investments"
 -- Usuarios crean sus inversiones
 CREATE POLICY "Users create own investments"
   ON public.investments FOR INSERT
-  WITH CHECK (auth.uid() = userId::uuid);
+  WITH CHECK (auth.uid() = user_id::uuid);
 
 -- Admin actualiza inversiones
 CREATE POLICY "Admin updates investments"
@@ -103,7 +103,7 @@ ALTER TABLE public.withdrawals ENABLE ROW LEVEL SECURITY;
 -- Usuarios ven sus retiros
 CREATE POLICY "Users see own withdrawals"
   ON public.withdrawals FOR SELECT
-  USING (auth.uid() = userId::uuid);
+  USING (auth.uid() = user_id::uuid);
 
 -- Admin ve todos los retiros
 CREATE POLICY "Admin sees all withdrawals"
@@ -115,7 +115,7 @@ CREATE POLICY "Admin sees all withdrawals"
 -- Usuarios crean sus retiros
 CREATE POLICY "Users create own withdrawals"
   ON public.withdrawals FOR INSERT
-  WITH CHECK (auth.uid() = userId::uuid);
+  WITH CHECK (auth.uid() = user_id::uuid);
 
 -- Admin actualiza retiros
 CREATE POLICY "Admin updates withdrawals"
@@ -130,7 +130,7 @@ ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 -- Usuarios ven sus notificaciones
 CREATE POLICY "Users see own notifications"
   ON public.notifications FOR SELECT
-  USING (auth.uid() = userId::uuid);
+  USING (auth.uid() = user_id::uuid);
 
 -- Admin ve todas las notificaciones
 CREATE POLICY "Admin sees all notifications"
@@ -142,7 +142,7 @@ CREATE POLICY "Admin sees all notifications"
 -- Usuarios crean sus notificaciones
 CREATE POLICY "Users create own notifications"
   ON public.notifications FOR INSERT
-  WITH CHECK (auth.uid() = userId::uuid);
+  WITH CHECK (auth.uid() = user_id::uuid);
 
 -- Admin crea notificaciones
 CREATE POLICY "Admin creates notifications"
@@ -154,7 +154,7 @@ CREATE POLICY "Admin creates notifications"
 -- Usuarios actualizan sus notificaciones
 CREATE POLICY "Users update own notifications"
   ON public.notifications FOR UPDATE
-  USING (auth.uid() = userId::uuid);
+  USING (auth.uid() = user_id::uuid);
 
 -- Admin actualiza notificaciones
 CREATE POLICY "Admin updates notifications"
