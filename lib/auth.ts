@@ -619,21 +619,23 @@ export async function getAllDepositsSupabase(): Promise<Deposit[]> {
     const result = await response.json()
     let deposits = result.data || []
     
-    // Transformar campos de Supabase a formato local si es necesario
+    console.log('[Supabase] Datos crudos de Supabase:', deposits)
+    
+    // Transformar campos de Supabase a formato local (basado en estructura real de tabla)
     deposits = deposits.map((d: any) => ({
       id: d.id,
-      userId: d.user_id || d.userId,
-      userEmail: d.user_email || d.userEmail || d.email,
-      userName: d.user_name || d.userName || d.name,
+      userId: d.user_id,
+      userEmail: d.email,
+      userName: d.name,
       amount: d.amount,
       status: d.status,
       method: d.method,
-      createdAt: d.created_at || d.createdAt,
-      approvedAt: d.approved_at || d.approvedAt,
+      createdAt: d.created_at,
+      approvedAt: d.approved_at,
       notes: d.notes
     }))
     
-    console.log(`[Supabase] Depósitos obtenidos: ${deposits?.length || 0}`)
+    console.log(`[Supabase] Depósitos obtenidos y transformados: ${deposits?.length || 0}`)
     
     // Si no hay en Supabase, usar localStorage
     if (deposits.length === 0) {
