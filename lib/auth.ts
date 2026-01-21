@@ -178,15 +178,18 @@ export async function approveDepositSupabase(depositId: string, notes?: string):
   try {
     console.log(`[Supabase] Aprobando depósito: ${depositId}`)
     
-    // Obtener el depósito
-    const { data: deposit, error: getError } = await supabase
-      .from('deposits')
-      .select('*')
-      .eq('id', depositId)
-      .single()
+    // Obtener el depósito desde localStorage primero
+    const localDeposits = getAllDeposits()
+    let deposit = localDeposits.find((d) => d.id === depositId)
     
-    if (getError || !deposit) {
-      console.error('[Supabase] Depósito no encontrado:', getError)
+    if (!deposit) {
+      // Si no está en localStorage, intentar desde Supabase
+      const supabaseDeposits = await getAllDepositsSupabase()
+      deposit = supabaseDeposits.find((d) => d.id === depositId)
+    }
+
+    if (!deposit) {
+      console.error('[Supabase] Depósito no encontrado')
       return false
     }
     
@@ -196,7 +199,7 @@ export async function approveDepositSupabase(depositId: string, notes?: string):
     const { data: user, error: userError } = await supabase
       .from('users')
       .select('*')
-      .eq('id', deposit.user_id)
+      .eq('id', deposit.userId)
       .single()
     
     if (userError || !user) {
@@ -206,7 +209,7 @@ export async function approveDepositSupabase(depositId: string, notes?: string):
     
     console.log('[Supabase] Usuario encontrado:', user.email)
     
-    // Actualizar depósito como aprobado
+    // Actualizar depósito como aprobado en Supabase
     const { error: updateDepError } = await supabase
       .from('deposits')
       .update({
@@ -228,12 +231,25 @@ export async function approveDepositSupabase(depositId: string, notes?: string):
       .update({
         balance: newBalance
       })
-      .eq('id', deposit.user_id)
+      .eq('id', deposit.userId)
     
     if (updateUserError) {
       console.error('[Supabase] Error al actualizar usuario:', updateUserError)
       return false
     }
+    
+    // Sincronizar con localStorage
+    const updatedLocalDeposits = localDeposits.map((d) => 
+      d.id === depositId 
+        ? {
+            ...d,
+            status: 'aprobado',
+            approvedAt: new Date().toISOString(),
+            notes: notes
+          }
+        : d
+    )
+    localStorage.setItem('cvvinvest_deposits', JSON.stringify(updatedLocalDeposits))
     
     console.log(`[Supabase] Depósito aprobado exitosamente`)
     return true
@@ -579,12 +595,60 @@ export function createDeposit(amount: number, method: string = "PayPal"): Deposi
   return deposit
 }
 
-// Obtener todos los depósitos
+// Obtener todos los depósitos desde localStorage
 export function getAllDeposits(): Deposit[] {
   if (typeof window === "undefined") return []
   const depositsData = localStorage.getItem("cvvinvest_deposits")
   if (!depositsData) return []
   return JSON.parse(depositsData)
+}
+
+// Obtener todos los depósitos desde Supabase (para admin)
+export async function getAllDepositsSupabase(): Promise<Deposit[]> {
+  try {
+    const response = await fetch('/api/deposits-admin')
+    
+    if (!response.ok) {
+      console.error('[Supabase] API error al obtener depósitos:', response.status)
+      return []
+    }
+    
+    const result = await response.json()
+    const deposits = result.data || []
+    
+    console.log(`[Supabase] Depósitos obtenidos: ${deposits?.length || 0}`)
+    return deposits || []
+  } catch (error) {
+    console.error('[Supabase] Exception al obtener depósitos:', error)
+    return []
+  }
+}
+
+// Sincronizar un depósito a Supabase
+export async function syncDepositToSupabase(deposit: Deposit): Promise<boolean> {
+  try {
+    console.log(`[Sync] Sincronizando depósito: ${deposit.id}`)
+    
+    const response = await fetch('/api/deposits/sync', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ deposit }),
+    })
+
+    if (!response.ok) {
+      console.error('[Sync] Error sincronizando depósito:', response.statusText)
+      return false
+    }
+
+    const result = await response.json()
+    console.log('[Sync] ✅ Depósito sincronizado:', result)
+    return true
+  } catch (error) {
+    console.error('[Sync] Exception:', error)
+    return false
+  }
 }
 
 // Obtener depósitos del usuario actual

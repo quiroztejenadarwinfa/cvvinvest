@@ -27,9 +27,12 @@ export function AdminOverview() {
         
         if (supabaseUsers.length > 0) {
           setUsers(supabaseUsers)
+          // Calcular estadísticas desde usuarios de Supabase
+          const totalDeposits = supabaseUsers.reduce((acc, u: any) => acc + (u.balance || 0), 0)
+          
           setStats({
             totalUsers: supabaseUsers.length,
-            totalDeposits: supabaseUsers.reduce((acc, u: any) => acc + (u.balance || 0), 0),
+            totalDeposits: totalDeposits,
             totalWithdrawals: 0,
             pendingWithdrawals: 0,
           })
@@ -62,10 +65,10 @@ export function AdminOverview() {
     // Cargar al montar
     loadStats()
     
-    // Actualizar cada 1 segundo para tiempo real
+    // Actualizar cada 2 segundos para tiempo real (más eficiente que 1 segundo)
     const interval = setInterval(() => {
       loadStats()
-    }, 1000)
+    }, 2000)
     
     return () => clearInterval(interval)
   }, [])

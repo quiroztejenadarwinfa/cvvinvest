@@ -7,7 +7,7 @@ import { Footer } from '@/components/footer'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Zap, CheckCircle, ArrowUpRight, AlertCircle, XCircle, MessageCircle, Copy, DollarSign } from 'lucide-react'
-import { getSessionUser, createDeposit, getUserDeposits } from '@/lib/auth'
+import { getSessionUser, createDeposit, getUserDeposits, syncDepositToSupabase } from '@/lib/auth'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { canAccessFeature, getPlanFeatures } from '@/lib/plan-features'
 import { createUserNotification, createAdminNotification } from '@/lib/notifications'
@@ -154,6 +154,11 @@ export default function DepositosPage() {
       const allDeposits = JSON.parse(localStorage.getItem('cvvinvest_deposits') || '[]')
       localStorage.setItem('cvvinvest_deposits', JSON.stringify([newDeposit, ...allDeposits]))
       
+      // Sincronizar con Supabase
+      syncDepositToSupabase(newDeposit).catch(error => {
+        console.error('Error sincronizando depósito con Supabase:', error)
+      })
+      
       // Enviar notificación al admin
       createAdminNotification({
         type: "deposit_pending",
@@ -195,6 +200,11 @@ export default function DepositosPage() {
       // Guardar depósito
       const allDeposits = JSON.parse(localStorage.getItem('cvvinvest_deposits') || '[]')
       localStorage.setItem('cvvinvest_deposits', JSON.stringify([newDeposit, ...allDeposits]))
+      
+      // Sincronizar con Supabase
+      syncDepositToSupabase(newDeposit).catch(error => {
+        console.error('Error sincronizando depósito con Supabase:', error)
+      })
       
       // Enviar notificación al admin
       createAdminNotification({

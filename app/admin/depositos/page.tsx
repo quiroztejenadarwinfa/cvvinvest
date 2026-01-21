@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { getSessionUser, clearSession, ADMIN_EMAIL, type User, getAllDeposits, approveDeposit, rejectDeposit, approveDepositSupabase, type Deposit } from "@/lib/auth"
+import { getSessionUser, clearSession, ADMIN_EMAIL, type User, getAllDeposits, approveDeposit, rejectDeposit, approveDepositSupabase, getAllDepositsSupabase, type Deposit } from "@/lib/auth"
 import { AdminSidebar } from "@/components/admin/sidebar"
 import { AdminHeader } from "@/components/admin/header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -83,14 +83,31 @@ export default function AdminDepositosPage() {
     loadDeposits()
     setLoading(false)
 
-    // Cargar depósitos cada 5 segundos
-    const interval = setInterval(loadDeposits, 5000)
+    // Cargar depósitos cada 2 segundos desde Supabase (tiempo real)
+    const interval = setInterval(loadDeposits, 2000)
     return () => clearInterval(interval)
   }, [router])
 
-  const loadDeposits = () => {
-    const allDeposits = getAllDeposits()
-    setDeposits(allDeposits.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()))
+  const loadDeposits = async () => {
+    try {
+      // Cargar primero desde Supabase (fuente de verdad)
+      const supabaseDeposits = await getAllDepositsSupabase()
+      
+      if (supabaseDeposits && supabaseDeposits.length > 0) {
+        console.log(`✅ Depósitos cargados desde Supabase: ${supabaseDeposits.length}`)
+        setDeposits(supabaseDeposits.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()))
+      } else {
+        // Fallback a localStorage si Supabase está vacío
+        const localDeposits = getAllDeposits()
+        console.log(`📦 Usando depósitos locales (fallback): ${localDeposits.length}`)
+        setDeposits(localDeposits.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()))
+      }
+    } catch (error) {
+      console.error('❌ Error cargando depósitos:', error)
+      // Fallback a localStorage
+      const localDeposits = getAllDeposits()
+      setDeposits(localDeposits.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()))
+    }
     
     // Load comprobantes from localStorage
     const allComprobantes = JSON.parse(localStorage.getItem('cvvinvest_comprobantes') || '[]')
