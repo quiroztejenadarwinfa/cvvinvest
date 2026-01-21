@@ -136,6 +136,8 @@ export default function DepositosPage() {
 
   const handlePayPalClick = () => {
     if (user && amount > 0) {
+      console.log('🔵 [handlePayPalClick] Iniciando depósito PayPal')
+      
       // Crear depósito pendiente
       const depositId = `dep_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
       const newDeposit = {
@@ -150,14 +152,26 @@ export default function DepositosPage() {
         userEmail: user.email
       }
       
+      console.log('💾 [handlePayPalClick] Guardando en localStorage:', newDeposit)
+      
       // Guardar depósito con la clave correcta
       const allDeposits = JSON.parse(localStorage.getItem('cvvinvest_deposits') || '[]')
       localStorage.setItem('cvvinvest_deposits', JSON.stringify([newDeposit, ...allDeposits]))
+      console.log('✅ [handlePayPalClick] Depósito guardado en localStorage')
       
       // Sincronizar con Supabase
-      syncDepositToSupabase(newDeposit).catch(error => {
-        console.error('Error sincronizando depósito con Supabase:', error)
-      })
+      console.log('🌐 [handlePayPalClick] Iniciando sincronización con Supabase...')
+      syncDepositToSupabase(newDeposit)
+        .then(success => {
+          if (success) {
+            console.log('✅ [handlePayPalClick] Sincronización exitosa')
+          } else {
+            console.warn('⚠️ [handlePayPalClick] Sincronización falló pero continuamos')
+          }
+        })
+        .catch(error => {
+          console.error('❌ [handlePayPalClick] Error sincronizando depósito con Supabase:', error)
+        })
       
       // Enviar notificación al admin
       createAdminNotification({
@@ -183,6 +197,8 @@ export default function DepositosPage() {
 
   const handleBankTransfer = () => {
     if (user && amount > 0) {
+      console.log('🔵 [handleBankTransfer] Iniciando depósito por transferencia bancaria')
+      
       // Crear depósito por transferencia bancaria
       const depositId = `dep_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
       const newDeposit = {
@@ -197,14 +213,26 @@ export default function DepositosPage() {
         userEmail: user.email
       }
       
+      console.log('💾 [handleBankTransfer] Guardando en localStorage:', newDeposit)
+      
       // Guardar depósito
       const allDeposits = JSON.parse(localStorage.getItem('cvvinvest_deposits') || '[]')
       localStorage.setItem('cvvinvest_deposits', JSON.stringify([newDeposit, ...allDeposits]))
+      console.log('✅ [handleBankTransfer] Depósito guardado en localStorage')
       
       // Sincronizar con Supabase
-      syncDepositToSupabase(newDeposit).catch(error => {
-        console.error('Error sincronizando depósito con Supabase:', error)
-      })
+      console.log('🌐 [handleBankTransfer] Iniciando sincronización con Supabase...')
+      syncDepositToSupabase(newDeposit)
+        .then(success => {
+          if (success) {
+            console.log('✅ [handleBankTransfer] Sincronización exitosa')
+          } else {
+            console.warn('⚠️ [handleBankTransfer] Sincronización falló pero continuamos')
+          }
+        })
+        .catch(error => {
+          console.error('❌ [handleBankTransfer] Error sincronizando depósito con Supabase:', error)
+        })
       
       // Enviar notificación al admin
       createAdminNotification({

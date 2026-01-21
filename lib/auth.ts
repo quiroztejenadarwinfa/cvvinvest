@@ -654,7 +654,8 @@ export async function getAllDepositsSupabase(): Promise<Deposit[]> {
 // Sincronizar un depósito a Supabase
 export async function syncDepositToSupabase(deposit: Deposit): Promise<boolean> {
   try {
-    console.log(`[Sync] Sincronizando depósito: ${deposit.id}`)
+    console.log(`[Sync] 🔄 Sincronizando depósito: ${deposit.id}`)
+    console.log('[Sync] Datos del depósito:', deposit)
     
     const response = await fetch('/api/deposits/sync', {
       method: 'POST',
@@ -664,16 +665,25 @@ export async function syncDepositToSupabase(deposit: Deposit): Promise<boolean> 
       body: JSON.stringify({ deposit }),
     })
 
+    const responseText = await response.text()
+    console.log('[Sync] Respuesta del servidor:', responseText)
+
     if (!response.ok) {
-      console.error('[Sync] Error sincronizando depósito:', response.statusText)
+      console.error('[Sync] ❌ Error sincronizando depósito:', response.status, response.statusText)
+      console.error('[Sync] Respuesta:', responseText)
       return false
     }
 
-    const result = await response.json()
-    console.log('[Sync] ✅ Depósito sincronizado:', result)
-    return true
+    try {
+      const result = JSON.parse(responseText)
+      console.log('[Sync] ✅ Depósito sincronizado exitosamente:', result)
+      return true
+    } catch (parseError) {
+      console.error('[Sync] Error parseando respuesta JSON:', parseError)
+      return false
+    }
   } catch (error) {
-    console.error('[Sync] Exception:', error)
+    console.error('[Sync] ❌ Exception:', error)
     return false
   }
 }
