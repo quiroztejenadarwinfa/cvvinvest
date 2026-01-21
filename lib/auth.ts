@@ -176,26 +176,20 @@ export async function approveInvestmentSupabase(investmentId: string, notes?: st
 // Aprobar depósito en Supabase
 export async function approveDepositSupabase(depositId: string, notes?: string): Promise<boolean> {
   try {
-    console.log(`[Supabase] Aprobando depósito: ${depositId}`)
+    console.log(`[Approve] Aprobando depósito: ${depositId}`)
     
-    // Obtener el depósito desde localStorage primero
+    // PRIMERO: Obtener el depósito desde localStorage (fuente actual)
     const localDeposits = getAllDeposits()
     let deposit = localDeposits.find((d) => d.id === depositId)
-    
-    if (!deposit) {
-      // Si no está en localStorage, intentar desde Supabase
-      const supabaseDeposits = await getAllDepositsSupabase()
-      deposit = supabaseDeposits.find((d) => d.id === depositId)
-    }
 
     if (!deposit) {
-      console.error('[Supabase] Depósito no encontrado')
+      console.error('[Approve] Depósito no encontrado en localStorage')
       return false
     }
     
-    console.log('[Supabase] Depósito encontrado:', deposit)
+    console.log('[Approve] Depósito encontrado:', { id: deposit.id, amount: deposit.amount, userId: deposit.userId })
     
-    // Obtener el usuario
+    // SEGUNDO: Obtener el usuario desde Supabase
     const { data: user, error: userError } = await supabase
       .from('users')
       .select('*')
@@ -203,13 +197,32 @@ export async function approveDepositSupabase(depositId: string, notes?: string):
       .single()
     
     if (userError || !user) {
-      console.error('[Supabase] Usuario no encontrado:', userError)
+      console.error('[Approve] Usuario no encontrado en Supabase:', userError)
       return false
     }
     
-    console.log('[Supabase] Usuario encontrado:', user.email)
+    console.log('[Approve] Usuario encontrado:', user.email, 'Balance actual:', user.balance)
     
-    // Actualizar depósito como aprobado en Supabase
+    // TERCERO: Calcular nuevo balance
+    const newBalance = (user.balance || 0) + deposit.amount
+    console.log('[Approve] Nuevo balance será:', newBalance)
+    
+    // CUARTO: Actualizar usuario EN SUPABASE
+    const { error: updateUserError } = await supabase
+      .from('users')
+      .update({
+        balance: newBalance
+      })
+      .eq('id', deposit.userId)
+    
+    if (updateUserError) {
+      console.error('[Approve] Error al actualizar usuario en Supabase:', updateUserError)
+      return false
+    }
+
+    console.log('[Approve] ✅ Usuario actualizado en Supabase')
+    
+    // QUINTO: Actualizar depósito EN SUPABASE
     const { error: updateDepError } = await supabase
       .from('deposits')
       .update({
@@ -220,25 +233,13 @@ export async function approveDepositSupabase(depositId: string, notes?: string):
       .eq('id', depositId)
     
     if (updateDepError) {
-      console.error('[Supabase] Error al actualizar depósito:', updateDepError)
-      return false
+      console.error('[Approve] Error al actualizar depósito en Supabase:', updateDepError)
+      // No retornar false aquí - el usuario ya fue actualizado
+    } else {
+      console.log('[Approve] ✅ Depósito actualizado en Supabase')
     }
     
-    // Actualizar usuario: sumar balance
-    const newBalance = user.balance + deposit.amount
-    const { error: updateUserError } = await supabase
-      .from('users')
-      .update({
-        balance: newBalance
-      })
-      .eq('id', deposit.userId)
-    
-    if (updateUserError) {
-      console.error('[Supabase] Error al actualizar usuario:', updateUserError)
-      return false
-    }
-    
-    // Sincronizar con localStorage
+    // SEXTO: Sincronizar con localStorage
     const updatedLocalDeposits = localDeposits.map((d) => 
       d.id === depositId 
         ? {
@@ -250,11 +251,12 @@ export async function approveDepositSupabase(depositId: string, notes?: string):
         : d
     )
     localStorage.setItem('cvvinvest_deposits', JSON.stringify(updatedLocalDeposits))
-    
-    console.log(`[Supabase] Depósito aprobado exitosamente`)
+    console.log('[Approve] ✅ localStorage sincronizado')
+
+    console.log(`[Approve] ✅ Depósito aprobado exitosamente`)
     return true
   } catch (error) {
-    console.error('[Supabase] Exception al aprobar depósito:', error)
+    console.error('[Approve] Exception al aprobar depósito:', error)
     return false
   }
 }
@@ -610,17 +612,40 @@ export async function getAllDepositsSupabase(): Promise<Deposit[]> {
     
     if (!response.ok) {
       console.error('[Supabase] API error al obtener depósitos:', response.status)
-      return []
+      // Fallback a localStorage
+      return getAllDeposits()
     }
     
     const result = await response.json()
-    const deposits = result.data || []
+    let deposits = result.data || []
+    
+    // Transformar campos de Supabase a formato local si es necesario
+    deposits = deposits.map((d: any) => ({
+      id: d.id,
+      userId: d.user_id || d.userId,
+      userEmail: d.user_email || d.userEmail || d.email,
+      userName: d.user_name || d.userName || d.name,
+      amount: d.amount,
+      status: d.status,
+      method: d.method,
+      createdAt: d.created_at || d.createdAt,
+      approvedAt: d.approved_at || d.approvedAt,
+      notes: d.notes
+    }))
     
     console.log(`[Supabase] Depósitos obtenidos: ${deposits?.length || 0}`)
+    
+    // Si no hay en Supabase, usar localStorage
+    if (deposits.length === 0) {
+      console.log('[Supabase] Sin depósitos en Supabase, usando localStorage')
+      return getAllDeposits()
+    }
+    
     return deposits || []
   } catch (error) {
     console.error('[Supabase] Exception al obtener depósitos:', error)
-    return []
+    // Fallback a localStorage si hay error
+    return getAllDeposits()
   }
 }
 

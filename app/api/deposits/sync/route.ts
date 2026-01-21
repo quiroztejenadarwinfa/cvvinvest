@@ -37,12 +37,14 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Crear nuevo depósito en Supabase
+    // Crear nuevo depósito en Supabase con mapeo correcto de campos
     const { data: newDeposit, error } = await supabase
       .from("deposits")
       .insert({
         id: deposit.id,
         user_id: deposit.userId,
+        user_email: deposit.userEmail,
+        user_name: deposit.userName,
         amount: deposit.amount,
         status: deposit.status || "pendiente",
         method: deposit.method,

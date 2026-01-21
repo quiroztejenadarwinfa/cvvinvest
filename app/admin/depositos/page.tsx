@@ -90,16 +90,28 @@ export default function AdminDepositosPage() {
 
   const loadDeposits = async () => {
     try {
-      // Cargar primero desde Supabase (fuente de verdad)
-      const supabaseDeposits = await getAllDepositsSupabase()
+      console.log('[Admin] Cargando depósitos...')
       
-      if (supabaseDeposits && supabaseDeposits.length > 0) {
-        console.log(`✅ Depósitos cargados desde Supabase: ${supabaseDeposits.length}`)
-        setDeposits(supabaseDeposits.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()))
-      } else {
-        // Fallback a localStorage si Supabase está vacío
-        const localDeposits = getAllDeposits()
-        console.log(`📦 Usando depósitos locales (fallback): ${localDeposits.length}`)
+      // Cargar primero desde localStorage (que es la fuente actual)
+      const localDeposits = getAllDeposits()
+      console.log(`[Admin] Depósitos locales: ${localDeposits.length}`)
+      
+      // Intentar cargar desde Supabase como complemento
+      try {
+        const supabaseDeposits = await getAllDepositsSupabase()
+        console.log(`[Admin] Depósitos desde Supabase: ${supabaseDeposits.length}`)
+        
+        // Si hay depósitos en Supabase, usarlos (fuente de verdad)
+        if (supabaseDeposits && supabaseDeposits.length > 0) {
+          setDeposits(supabaseDeposits.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()))
+          console.log('✅ Usando depósitos de Supabase')
+        } else {
+          // Si no, usar localStorage
+          setDeposits(localDeposits.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()))
+          console.log('✅ Usando depósitos locales')
+        }
+      } catch (supabaseError) {
+        console.error('[Admin] Error obteniendo de Supabase, usando localStorage:', supabaseError)
         setDeposits(localDeposits.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()))
       }
     } catch (error) {
