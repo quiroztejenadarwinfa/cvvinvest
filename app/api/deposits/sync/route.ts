@@ -27,56 +27,50 @@ export async function POST(request: NextRequest) {
       .from("deposits")
       .select("id")
       .eq("id", deposit.id)
-      .single()
 
-    if (existingDeposit) {
-      console.log(`[API Sync] Depósito ya existe en Supabase`)
+    if (existingDeposit && existingDeposit.length > 0) {
+      console.log(`[API Sync] ℹ️ Depósito ya existe en Supabase`)
       return NextResponse.json({
         success: true,
         message: "Depósito ya existe",
-        data: existingDeposit,
+        data: existingDeposit[0],
       })
     }
 
-    // Crear nuevo depósito en Supabase con los campos correctos de la tabla
-    console.log('[API Sync] Insertando nuevo depósito con datos:', {
+    // Crear datos de inserción con SOLO los campos que existen en la tabla
+    // Basados en la estructura vista: id, user_id, email, name, amount, status
+    const insertData = {
       id: deposit.id,
       user_id: deposit.userId,
       email: deposit.userEmail,
       name: deposit.userName,
       amount: deposit.amount,
-      status: deposit.status || "pendiente",
-      // Agregar method y created_at si existen en la tabla
-      method: deposit.method,
-      created_at: deposit.createdAt,
-    })
+      status: deposit.status || "pendiente"
+    }
+
+    console.log('[API Sync] 📝 Datos a insertar:', insertData)
 
     const { data: newDeposit, error } = await supabase
       .from("deposits")
-      .insert({
-        id: deposit.id,
-        user_id: deposit.userId,
-        email: deposit.userEmail,
-        name: deposit.userName,
-        amount: deposit.amount,
-        status: deposit.status || "pendiente",
-        method: deposit.method,
-        created_at: deposit.createdAt,
-      })
+      .insert([insertData])
       .select()
-      .single()
 
     if (error) {
-      console.error(`[API Sync] Error creando depósito en Supabase:`, error)
+      console.error(`[API Sync] ❌ Error creando depósito en Supabase:`, error)
+      console.error('[API Sync] Error code:', error.code)
       console.error('[API Sync] Error message:', error.message)
       console.error('[API Sync] Error details:', error.details)
       return NextResponse.json(
-        { error: error.message, details: error.details },
+        { 
+          error: error.message, 
+          code: error.code,
+          details: error.details 
+        },
         { status: 500 }
       )
     }
 
-    console.log(`[API Sync] ✅ Depósito sincronizado exitosamente: ${deposit.id}`)
+    console.log(`[API Sync] ✅ Depósito sincronizado exitosamente:`, newDeposit)
 
     return NextResponse.json({
       success: true,
